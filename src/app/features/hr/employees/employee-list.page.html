@@ -1,0 +1,148 @@
+<header class="page-header">
+  <h1>{{ 'employees.title' | transloco }}</h1>
+  @if (canCreate()) {
+    <a matButton="filled" routerLink="new" data-testid="create-employee">
+      {{ 'employees.create' | transloco }}
+    </a>
+  }
+</header>
+
+<div class="filters" role="search">
+  <mat-form-field>
+    <mat-label>{{ 'employees.search' | transloco }}</mat-label>
+    <input matInput type="search" [formControl]="search" data-testid="employee-search" />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>{{ 'employees.fields.status' | transloco }}</mat-label>
+    <mat-select
+      [value]="list.query().filters['status'] ?? ''"
+      (valueChange)="list.setFilter('status', $event)"
+      data-testid="status-filter"
+    >
+      <mat-option value="">{{ 'common.all' | transloco }}</mat-option>
+      @for (status of statuses; track status) {
+        <mat-option [value]="status">{{ 'status.employee.' + status | transloco }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>{{ 'employees.fields.department' | transloco }}</mat-label>
+    <mat-select
+      [value]="list.query().filters['departmentId'] ?? ''"
+      (valueChange)="list.setFilter('departmentId', $event)"
+    >
+      <mat-option value="">{{ 'common.all' | transloco }}</mat-option>
+      @for (department of departments.value(); track department.id) {
+        <mat-option [value]="department.id"
+          ><bdi>{{ department.name }}</bdi></mat-option
+        >
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+@if (employees.isLoading()) {
+  <mat-progress-bar mode="indeterminate" [attr.aria-label]="'common.loading' | transloco" />
+}
+
+@if (employees.error(); as error) {
+  <app-error-alert [error]="error" [retryable]="true" (retry)="employees.reload()" />
+} @else if (employees.value(); as page) {
+  @if (page.content.length === 0) {
+    <div class="empty" data-testid="employees-empty">
+      @if (isFiltered()) {
+        <p>{{ 'employees.emptyFiltered' | transloco }}</p>
+        <button matButton type="button" (click)="clearFilters()">
+          {{ 'common.clearFilters' | transloco }}
+        </button>
+      } @else {
+        <p>{{ 'employees.empty' | transloco }}</p>
+      }
+    </div>
+  } @else {
+    <div class="table-scroll">
+      <table
+        mat-table
+        [dataSource]="page.content"
+        matSort
+        [matSortActive]="sortState().active"
+        [matSortDirection]="sortState().direction"
+        (matSortChange)="onSort($event)"
+        data-testid="employees-table"
+      >
+        <caption class="visually-hidden">
+          {{
+            'employees.title' | transloco
+          }}
+        </caption>
+
+        <ng-container matColumnDef="employeeNumber">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>
+            {{ 'employees.fields.employeeNumber' | transloco }}
+          </th>
+          <td mat-cell *matCellDef="let e">
+            <bdi>{{ e.employeeNumber }}</bdi>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fullName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>
+            {{ 'employees.fields.fullName' | transloco }}
+          </th>
+          <td mat-cell *matCellDef="let e">
+            <a [routerLink]="e.id"
+              ><bdi>{{ e.fullName }}</bdi></a
+            >
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="department">
+          <th mat-header-cell *matHeaderCellDef>{{ 'employees.fields.department' | transloco }}</th>
+          <td mat-cell *matCellDef="let e">
+            <bdi>{{ e.departmentName ?? '—' }}</bdi>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="manager">
+          <th mat-header-cell *matHeaderCellDef>{{ 'employees.fields.manager' | transloco }}</th>
+          <td mat-cell *matCellDef="let e">
+            <bdi>{{ e.managerName ?? '—' }}</bdi>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>
+            {{ 'employees.fields.status' | transloco }}
+          </th>
+          <td mat-cell *matCellDef="let e">
+            <app-status-badge
+              namespace="status.employee"
+              [value]="e.status"
+              [tones]="statusTones"
+            />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="account">
+          <th mat-header-cell *matHeaderCellDef>{{ 'employees.fields.account' | transloco }}</th>
+          <td mat-cell *matCellDef="let e">
+            {{ (e.userId ? 'employees.account.linked' : 'employees.account.none') | transloco }}
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="page.page.totalElements"
+      [pageIndex]="page.page.number"
+      [pageSize]="page.page.size"
+      [pageSizeOptions]="pageSizes"
+      (page)="onPage($event)"
+    />
+  }
+}

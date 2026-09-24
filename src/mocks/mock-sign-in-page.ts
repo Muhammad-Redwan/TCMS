@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { MatButton } from '@angular/material/button';
+import { resetDb } from './db';
 import { PERSONA_STORAGE_KEY, PERSONAS } from './personas';
 
 /** Stands in for the Keycloak login page in mock mode: pick a persona, then return to the app. */
@@ -24,6 +25,14 @@ import { PERSONA_STORAGE_KEY, PERSONAS } from './personas';
           </li>
         }
       </ul>
+      <p>
+        <button matButton type="button" (click)="reset()" data-testid="reset-mock-data">
+          Reset mock data
+        </button>
+        @if (resetDone()) {
+          <span role="status">Mock data reset.</span>
+        }
+      </p>
     </main>
   `,
   styles: `
@@ -42,6 +51,12 @@ import { PERSONA_STORAGE_KEY, PERSONAS } from './personas';
 })
 export class MockSignInPage {
   protected readonly personas = Object.entries(PERSONAS);
+  protected readonly resetDone = signal(false);
+
+  protected reset(): void {
+    resetDb();
+    this.resetDone.set(true);
+  }
 
   protected signIn(key: string): void {
     localStorage.setItem(PERSONA_STORAGE_KEY, key);

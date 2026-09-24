@@ -1,14 +1,24 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject, resource } from '@angular/core';
+import { MatButton } from '@angular/material/button';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { Api } from '../../api/api';
+import { getSetupStatus } from '../../api/functions';
 import { SessionService } from '../../core/session/session.service';
 
 /** Signed-in landing page. Shows the session context returned by /me. */
 @Component({
   selector: 'app-home-page',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, RouterLink, MatButton],
   template: `
     @if (session.me(); as me) {
       <h1 data-testid="welcome">{{ 'home.welcome' | transloco: { name: me.displayName } }}</h1>
+      @if (setup.value()?.ready === false) {
+        <div class="setup-banner" role="status" data-testid="setup-banner">
+          <p>{{ 'home.setupPending' | transloco }}</p>
+          <a matButton="filled" routerLink="/setup">{{ 'home.setupLink' | transloco }}</a>
+        </div>
+      }
       <dl>
         <dt>{{ 'home.tenant' | transloco }}</dt>
         <dd>
@@ -49,6 +59,22 @@ import { SessionService } from '../../core/session/session.service';
     dt {
       color: var(--mat-sys-on-surface-variant);
     }
+    .setup-banner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      max-width: 48rem;
+      padding: 0.75rem 1rem;
+      margin-block-end: 1.5rem;
+      border-radius: var(--mat-sys-corner-medium);
+      background: var(--mat-sys-secondary-container);
+      color: var(--mat-sys-on-secondary-container);
+      p {
+        margin: 0;
+      }
+    }
     dd,
     ul {
       margin: 0;
@@ -58,5 +84,13 @@ import { SessionService } from '../../core/session/session.service';
   `,
 })
 export class HomePage {
+  private readonly api = inject(Api);
   protected readonly session = inject(SessionService);
+  private readonly isAdmin = computed(() => this.session.permissions().has('org.settings.write'));
+
+  /** Only company admins see setup progress; others never call the endpoint. */
+  protected readonly setup = resource({
+    params: () => (this.isAdmin() ? true : undefined),
+    loader: () => this.api.invoke(getSetupStatus),
+  });
 }

@@ -20,7 +20,8 @@
     "policies": "Policies",
     "claims": "My claims",
     "approvals": "Approvals",
-    "settlements": "Settlements"
+    "settlements": "Settlements",
+    "setup": "Company setup"
   },
   "login": {
     "title": "Sign in to TCMS",
@@ -32,7 +33,9 @@
     "tenant": "Organization",
     "timezone": "Time zone",
     "currency": "Currency",
-    "permissions": "Your access"
+    "permissions": "Your access",
+    "setupPending": "Company setup is not finished yet.",
+    "setupLink": "Continue setup"
   },
   "planned": {
     "title": "{{screen}} — coming soon",
@@ -52,7 +55,32 @@
       "body": "TCMS could not load. Try again in a moment."
     },
     "goHome": "Go to home",
-    "retry": "Try again"
+    "retry": "Try again",
+    "employee": {
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive"
+    },
+    "tenant": {
+      "PROVISIONING": "Provisioning",
+      "READY": "Ready",
+      "FAILED": "Failed"
+    },
+    "user": {
+      "ACTIVE": "Active",
+      "INVITED": "Invited",
+      "DISABLED": "Disabled"
+    },
+    "job": {
+      "QUEUED": "Queued",
+      "RUNNING": "In progress",
+      "SUCCEEDED": "Completed",
+      "FAILED": "Failed"
+    },
+    "setup": {
+      "DONE": "Done",
+      "PENDING": "To do",
+      "NOT_AVAILABLE": "Coming later"
+    }
   },
   "errors": {
     "NETWORK_ERROR": "Cannot reach TCMS. Check your connection and try again.",
@@ -66,6 +94,193 @@
     "VALIDATION_FAILED": "Please review the highlighted fields.",
     "SERVER_ERROR": "TCMS had a problem completing this request.",
     "UNKNOWN_ERROR": "Something went wrong.",
-    "traceId": "Support reference: {{traceId}}"
+    "traceId": "Support reference: {{traceId}}",
+    "traceLabel": "Support reference:",
+    "outcomeUnknown": "The result is not certain. Check whether the change was saved before trying again.",
+    "PRECONDITION_REQUIRED": "This change needs the latest version. Reload the page and try again.",
+    "IDEMPOTENCY_KEY_REQUIRED": "Something went wrong.",
+    "PROVISIONING_FAILED": "Provisioning failed."
+  },
+  "common": {
+    "all": "All",
+    "none": "None",
+    "cancel": "Cancel",
+    "save": "Save changes",
+    "loading": "Loading",
+    "clearFilters": "Clear filters",
+    "reloadLatest": "Load latest version",
+    "edit": "Edit",
+    "close": "Close",
+    "open": "Open",
+    "listSeparator": ", "
+  },
+  "validation": {
+    "required": "This field is required.",
+    "email": "Enter a valid email address.",
+    "server": {
+      "REQUIRED": "This field is required.",
+      "DUPLICATE": "This value is already in use.",
+      "INVALID_EMAIL": "Enter a valid email address.",
+      "MANAGER_INACTIVE": "Choose an active employee as manager.",
+      "SELF_MANAGER": "An employee cannot be their own manager.",
+      "NOT_FOUND": "This item no longer exists.",
+      "INVALID_TIMEZONE": "Choose a supported time zone.",
+      "INVALID_CURRENCY": "Choose a supported currency.",
+      "UNKNOWN_ROLE": "One of the roles is not available.",
+      "LAST_ADMIN": "The company must keep at least one company admin."
+    }
+  },
+  "unsaved": {
+    "title": "Leave without saving?",
+    "body": "Your changes on this page will be lost.",
+    "leave": "Leave page"
+  },
+  "locales": {
+    "en": "English",
+    "ar": "العربية"
+  },
+  "employees": {
+    "title": "Employees",
+    "newTitle": "New employee",
+    "create": "Add employee",
+    "search": "Search by name, employee ID or email",
+    "empty": "No employees yet.",
+    "emptyFiltered": "No employees match these filters.",
+    "created": "Employee added.",
+    "saved": "Changes saved.",
+    "fields": {
+      "employeeNumber": "Employee ID",
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "department": "Department",
+      "manager": "Manager",
+      "status": "Status",
+      "account": "Sign-in account"
+    },
+    "hints": {
+      "employeeNumber": "Must be unique within your company."
+    },
+    "account": {
+      "linked": "Linked",
+      "none": "Not linked",
+      "linkedLong": "This employee has a sign-in account.",
+      "noneLong": "This employee has no sign-in account yet."
+    }
+  },
+  "organization": {
+    "title": "Organization",
+    "profile": "Company profile",
+    "saved": "Company profile saved.",
+    "fields": {
+      "legalName": "Legal name",
+      "displayName": "Display name",
+      "timezone": "Time zone",
+      "currency": "Currency",
+      "defaultLocale": "Default language"
+    },
+    "hints": {
+      "timezone": "Dates and deadlines are shown in this time zone.",
+      "currency": "Claim amounts use this currency."
+    }
+  },
+  "departments": {
+    "title": "Departments",
+    "add": "Add department",
+    "newTitle": "New department",
+    "editTitle": "Edit department",
+    "empty": "No departments yet.",
+    "created": "Department added.",
+    "saved": "Department updated.",
+    "fields": {
+      "name": "Name",
+      "manager": "Manager",
+      "employeeCount": "Employees"
+    }
+  },
+  "tenants": {
+    "title": "Tenants",
+    "create": "New tenant",
+    "newTitle": "Provision a new tenant",
+    "search": "Search by name or admin email",
+    "empty": "No tenants yet.",
+    "emptyFiltered": "No tenants match these filters.",
+    "started": "Provisioning started.",
+    "fields": {
+      "displayName": "Company display name",
+      "legalName": "Legal name",
+      "adminEmail": "First admin email",
+      "timezone": "Time zone",
+      "currency": "Currency",
+      "defaultLocale": "Default language",
+      "status": "Status",
+      "createdAt": "Created"
+    },
+    "hints": {
+      "adminEmail": "This person gets the invitation to finish company setup."
+    },
+    "provisioning": {
+      "title": "Provisioning",
+      "pending": "Setting up the tenant. The company admin can sign in once it is ready.",
+      "progress": "Step {{processed}} of {{total}}",
+      "ready": "The tenant is ready. The admin invitation goes to {{email}}.",
+      "failed": "Provisioning failed. Nothing was made available to the company.",
+      "reference": "Support reference: {{ref}}",
+      "retry": "Retry provisioning",
+      "stale": "Status updates paused. Reload the page to check again."
+    }
+  },
+  "users": {
+    "title": "Users & roles",
+    "search": "Search by name or email",
+    "empty": "No users yet.",
+    "emptyFiltered": "No users match these filters.",
+    "saved": "Roles updated.",
+    "rolesHint": "Roles decide what this person can see and do.",
+    "linkedEmployee": "Linked employee record",
+    "noEmployee": "Not linked to an employee record.",
+    "fields": {
+      "displayName": "Name",
+      "email": "Email",
+      "status": "Status",
+      "roles": "Roles"
+    }
+  },
+  "roles": {
+    "EMPLOYEE": "Employee",
+    "APPROVER": "Approver",
+    "FINANCE": "Finance",
+    "HR": "HR",
+    "COMPANY_ADMIN": "Company admin",
+    "descriptions": {
+      "EMPLOYEE": "Submit and track their own claims",
+      "APPROVER": "Review claims assigned to them",
+      "FINANCE": "Export and settle approved claims",
+      "HR": "Manage employee records",
+      "COMPANY_ADMIN": "Company settings, users and roles"
+    }
+  },
+  "setup": {
+    "title": "Company setup",
+    "intro": "Finish these steps so employees can start submitting claims.",
+    "ready": "Setup is complete. Employees can start submitting claims.",
+    "steps": {
+      "ORGANIZATION": {
+        "title": "Company profile",
+        "body": "Confirm the legal name, time zone and currency."
+      },
+      "ACCESS": {
+        "title": "Access",
+        "body": "Give people roles such as approver, finance and HR."
+      },
+      "EMPLOYEE_SOURCE": {
+        "title": "Employees",
+        "body": "Add employees so they can sign in and submit claims."
+      },
+      "POLICY": {
+        "title": "Transportation policy",
+        "body": "Available in a later release."
+      }
+    }
   }
 }

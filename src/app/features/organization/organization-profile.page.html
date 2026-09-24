@@ -1,0 +1,106 @@
+@if (loaded.isLoading()) {
+  <mat-progress-bar mode="indeterminate" [attr.aria-label]="'common.loading' | transloco" />
+}
+
+@if (loaded.error(); as error) {
+  <app-error-alert [error]="error" [retryable]="true" (retry)="loaded.reload()" />
+} @else if (loaded.hasValue()) {
+  @if (saveError(); as error) {
+    @if (conflict()) {
+      <div class="conflict" role="alert" data-testid="conflict">
+        <p>{{ 'errors.CONFLICT' | transloco }}</p>
+        <button matButton="outlined" type="button" (click)="reloadLatest()">
+          {{ 'common.reloadLatest' | transloco }}
+        </button>
+      </div>
+    } @else if (error.fieldErrors.length === 0) {
+      <app-error-alert [error]="error" />
+    }
+  }
+
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate class="form-grid">
+    <mat-form-field>
+      <mat-label>{{ 'organization.fields.legalName' | transloco }}</mat-label>
+      <input matInput formControlName="legalName" required dir="auto" />
+      <mat-error>
+        <app-field-error
+          [control]="form.controls.legalName"
+          [errors]="form.controls.legalName.errors"
+        />
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'organization.fields.displayName' | transloco }}</mat-label>
+      <input matInput formControlName="displayName" required dir="auto" />
+      <mat-error>
+        <app-field-error
+          [control]="form.controls.displayName"
+          [errors]="form.controls.displayName.errors"
+        />
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'organization.fields.timezone' | transloco }}</mat-label>
+      <input
+        matInput
+        formControlName="timezone"
+        required
+        dir="ltr"
+        [matAutocomplete]="tz"
+        autocomplete="off"
+      />
+      <mat-autocomplete #tz="matAutocomplete">
+        @for (zone of timezoneOptions(); track zone) {
+          <mat-option [value]="zone">{{ zone }}</mat-option>
+        }
+      </mat-autocomplete>
+      <mat-hint>{{ 'organization.hints.timezone' | transloco }}</mat-hint>
+      <mat-error>
+        <app-field-error
+          [control]="form.controls.timezone"
+          [errors]="form.controls.timezone.errors"
+        />
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'organization.fields.currency' | transloco }}</mat-label>
+      <mat-select formControlName="currency" required>
+        @for (currency of currencies; track currency) {
+          <mat-option [value]="currency">{{ currency }}</mat-option>
+        }
+      </mat-select>
+      <mat-hint>{{ 'organization.hints.currency' | transloco }}</mat-hint>
+      <mat-error>
+        <app-field-error
+          [control]="form.controls.currency"
+          [errors]="form.controls.currency.errors"
+        />
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'organization.fields.defaultLocale' | transloco }}</mat-label>
+      <mat-select formControlName="defaultLocale" required>
+        @for (locale of locales; track locale) {
+          <mat-option [value]="locale">{{ 'locales.' + locale | transloco }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (canEdit()) {
+      <div class="actions">
+        <button
+          matButton="filled"
+          type="submit"
+          [disabled]="saving()"
+          data-testid="save-organization"
+        >
+          {{ 'common.save' | transloco }}
+        </button>
+      </div>
+    }
+  </form>
+}

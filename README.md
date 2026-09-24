@@ -81,4 +81,6 @@ The image serves the build with nginx on port 8080, with security headers from `
 
 ## Status
 
-Sprint 0 foundations. Feature screens are placeholders that name their screen ID and sprint. See the guide §9 for the sprint plan.
+Sprint 0 foundations done. Sprint 1 screens are built against the mock API: tenants with provisioning (T01–T02), company setup (T03), organization profile and departments (O01–O02), employees (H01–H02), users and role assignment (I01). Other screens are placeholders naming their screen ID and sprint. `contracts/openapi.yaml` is still a frontend-written draft awaiting the backend spec; see the guide §9 for the sprint plan.
+
+In mock mode, a tenant whose name contains "fail" fails provisioning so the failure and retry path can be tried. **Reset mock data** on the mock sign-in page restores the seed data.

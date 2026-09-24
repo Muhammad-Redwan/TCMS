@@ -19,6 +19,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
     sprint: 1,
   },
   {
+    screenId: 'T03',
+    path: 'setup',
+    labelKey: 'nav.setup',
+    permission: 'org.settings.write',
+    sprint: 1,
+  },
+  {
     screenId: 'O01',
     path: 'organization',
     labelKey: 'nav.organization',

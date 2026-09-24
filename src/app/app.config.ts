@@ -6,6 +6,10 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
+import {
+  MAT_FORM_FIELD_DEFAULT_OPTIONS,
+  MatFormFieldDefaultOptions,
+} from '@angular/material/form-field';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideTransloco } from '@jsverse/transloco';
 import { provideApiConfiguration } from './api/api-configuration';
@@ -25,6 +29,14 @@ export function appConfig(config: AppConfig): ApplicationConfig {
       // X-XSRF-TOKEN header on same-origin mutating requests (Spring Security defaults).
       provideHttpClient(withFetch(), withInterceptors([apiInterceptor])),
       provideApiConfiguration(config.apiBasePath),
+      // Hints and errors grow with their text, so long Arabic/English messages never overlap.
+      {
+        provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+        useValue: {
+          appearance: 'outline',
+          subscriptSizing: 'dynamic',
+        } satisfies MatFormFieldDefaultOptions,
+      },
       provideTransloco({
         config: {
           availableLangs: config.supportedLocales,

@@ -70,3 +70,18 @@ These come from the frontend guide (`../TCMS_FRONTEND_README.md`) and strategy (
 - Money and totals come from the backend as decimal strings; never compute authoritative amounts in the client.
 - Mock data is fabricated only (`src/mocks/personas.ts`); never use real employee data.
 - Before finishing a change, run: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, and `npm run test:e2e` for UI flows.
+
+### Feature patterns (follow the existing screens)
+
+- **Forms use typed Reactive Forms, not Signal Forms** (decided 2026-09-24): Angular Material 22 has no built-in Signal Forms integration, so error states would break. Revisit when Material supports it.
+- Load data with `resource()` + `Api.invoke`; show `mat-progress-bar` while loading, `<app-error-alert>` with retry on error, and a distinct empty state vs "no results for these filters".
+- Lists keep page/size/sort/search/filters in the URL via `ListQueryState`; the server sorts and filters.
+- Edits: read with `invoke$Response` + `versioned()` and send the ETag as `If-Match`; on 409/412 show the `.conflict` block with "Load latest version", never a success message.
+- Creates send `Idempotency-Key` from `newIdempotencyKey()`, created once per form and replaced only after success.
+- Server field errors go through `applyServerErrors()` then `focusFirstInvalid(host, injector)`; field messages come from `<app-field-error>` (`validation.*` / `validation.server.<CODE>` keys).
+- Edit pages implement `HasUnsavedChanges` and use `unsavedChangesGuard`.
+- Async jobs: `JobPoller.watch(jobId)`; unsubscribe on destroy; re-read the owning resource when the job ends.
+- Dates: `tenantDate` pipe (tenant time zone, date-only values never shifted).
+- Pickers over large lists (employees) search the server, like `EmployeePicker`; never load a full list into a select.
+- Every new endpoint gets an MSW handler in `src/mocks/api/` that behaves like the contract: permissions (403), validation (422 + fieldErrors), If-Match (412), Idempotency-Key replay.
+- E2E: in Playwright use `getByLabel(text, { exact: true })` (labels match substrings by default) and wait for dialogs to focus before typing.

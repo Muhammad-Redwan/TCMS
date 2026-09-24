@@ -7,7 +7,7 @@
     "start:mock": "ng serve --configuration mock",
     "start:local": "ng serve --configuration local",
     "api:generate": "ng-openapi-gen",
-    "api:check": "ng-openapi-gen && git diff --exit-code -- src/app/api",
+    "api:check": "node scripts/check-api.mjs",
     "lint": "ng lint",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit",
     "format": "prettier --write \"src/**/*.{ts,html,scss,json}\" \"e2e/**/*.ts\"",

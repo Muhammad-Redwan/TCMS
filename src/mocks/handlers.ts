@@ -1,6 +1,11 @@
 import { http, HttpResponse } from 'msw';
 import { AppConfig } from '../app/core/config/app-config';
-import { PERSONA_STORAGE_KEY, PERSONAS } from './personas';
+import { employeeHandlers } from './api/employees';
+import { organizationHandlers } from './api/organization';
+import { tenantHandlers } from './api/tenants';
+import { userHandlers } from './api/users';
+import { currentPersona, problem } from './http-helpers';
+import { PERSONA_STORAGE_KEY } from './personas';
 
 /** Mock mode signs in through a local page instead of the gateway + Keycloak. */
 export const MOCK_LOGIN_PATH = '/mock/sign-in';
@@ -15,18 +20,6 @@ const mockConfig: AppConfig = {
   featureFlags: {},
 };
 
-function problem(status: number, code: string) {
-  return HttpResponse.json(
-    { type: 'about:blank', title: code, status, code, traceId: `mock-${Date.now().toString(16)}` },
-    { status, headers: { 'Content-Type': 'application/problem+json' } },
-  );
-}
-
-function currentPersona() {
-  const key = localStorage.getItem(PERSONA_STORAGE_KEY);
-  return key ? PERSONAS[key] : undefined;
-}
-
 export const handlers = [
   http.get('/config.json', () => HttpResponse.json(mockConfig)),
 
@@ -39,6 +32,11 @@ export const handlers = [
     localStorage.removeItem(PERSONA_STORAGE_KEY);
     return new HttpResponse(null, { status: 204, headers: { Location: '/login' } });
   }),
+
+  ...organizationHandlers,
+  ...employeeHandlers,
+  ...tenantHandlers,
+  ...userHandlers,
 
   // Any API route not mocked yet answers like a real missing endpoint would.
   http.all('/api/*', () => problem(404, 'NOT_FOUND')),

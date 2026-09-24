@@ -1,13 +1,5 @@
-import { expect, Page, test } from '@playwright/test';
-
-async function signInAs(page: Page, persona: string, startUrl = '/'): Promise<void> {
-  await page.goto(startUrl);
-  await expect(page).toHaveURL(/\/login/);
-  await page.getByTestId('sign-in').click();
-  await page.getByTestId(`persona-${persona}`).click();
-  // Wait for the post-login page load to finish before the test navigates again.
-  await expect(page.getByTestId('sign-out')).toBeVisible();
-}
+import { expect, test } from '@playwright/test';
+import { signInAs } from './support';
 
 test('anonymous user is sent to sign-in and returns to the requested page', async ({ page }) => {
   await signInAs(page, 'employee', '/claims');

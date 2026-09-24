@@ -1,0 +1,131 @@
+<nav class="breadcrumb">
+  <a routerLink="/hr/employees">{{ 'employees.title' | transloco }}</a>
+</nav>
+
+@if (isNew()) {
+  <h1>{{ 'employees.newTitle' | transloco }}</h1>
+} @else if (loaded.value(); as record) {
+  <header class="page-header">
+    <h1>
+      <bdi>{{ record.data.fullName }}</bdi>
+    </h1>
+    <app-status-badge
+      namespace="status.employee"
+      [value]="record.data.status"
+      [tones]="statusTones"
+    />
+  </header>
+  <p class="account" data-testid="account-link">
+    {{
+      (record.data.userId ? 'employees.account.linkedLong' : 'employees.account.noneLong')
+        | transloco
+    }}
+  </p>
+}
+
+@if (loaded.isLoading()) {
+  <mat-progress-bar mode="indeterminate" [attr.aria-label]="'common.loading' | transloco" />
+}
+
+@if (loaded.error(); as error) {
+  <app-error-alert [error]="error" [retryable]="true" (retry)="loaded.reload()" />
+} @else if (isNew() || loaded.hasValue()) {
+  @if (saveError(); as error) {
+    @if (conflict()) {
+      <div class="conflict" role="alert" data-testid="conflict">
+        <p>{{ 'errors.CONFLICT' | transloco }}</p>
+        <button matButton="outlined" type="button" (click)="reloadLatest()">
+          {{ 'common.reloadLatest' | transloco }}
+        </button>
+      </div>
+    } @else if (error.fieldErrors.length === 0) {
+      <app-error-alert [error]="error" />
+    }
+  }
+
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate class="form-grid">
+    <mat-form-field>
+      <mat-label>{{ 'employees.fields.employeeNumber' | transloco }}</mat-label>
+      <input matInput formControlName="employeeNumber" required autocomplete="off" />
+      <mat-hint>{{ 'employees.hints.employeeNumber' | transloco }}</mat-hint>
+      <mat-error>
+        <app-field-error
+          [control]="form.controls.employeeNumber"
+          [errors]="form.controls.employeeNumber.errors"
+        />
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'employees.fields.fullName' | transloco }}</mat-label>
+      <input matInput formControlName="fullName" required autocomplete="off" dir="auto" />
+      <mat-error>
+        <app-field-error
+          [control]="form.controls.fullName"
+          [errors]="form.controls.fullName.errors"
+        />
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'employees.fields.email' | transloco }}</mat-label>
+      <input matInput type="email" formControlName="email" autocomplete="off" dir="ltr" />
+      <mat-error>
+        <app-field-error [control]="form.controls.email" [errors]="form.controls.email.errors" />
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'employees.fields.phone' | transloco }}</mat-label>
+      <input matInput type="tel" formControlName="phone" autocomplete="off" dir="ltr" />
+      <mat-error>
+        <app-field-error [control]="form.controls.phone" [errors]="form.controls.phone.errors" />
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'employees.fields.department' | transloco }}</mat-label>
+      <mat-select formControlName="departmentId">
+        <mat-option value="">{{ 'common.none' | transloco }}</mat-option>
+        @for (department of departments.value(); track department.id) {
+          <mat-option [value]="department.id"
+            ><bdi>{{ department.name }}</bdi></mat-option
+          >
+        }
+      </mat-select>
+      <mat-error>
+        <app-field-error
+          [control]="form.controls.departmentId"
+          [errors]="form.controls.departmentId.errors"
+        />
+      </mat-error>
+    </mat-form-field>
+
+    <app-employee-picker
+      formControlName="managerId"
+      [label]="'employees.fields.manager' | transloco"
+      [excludeId]="employeeId() ?? null"
+      [initialName]="loaded.value()?.data?.managerName ?? null"
+    />
+
+    @if (!isNew()) {
+      <mat-form-field>
+        <mat-label>{{ 'employees.fields.status' | transloco }}</mat-label>
+        <mat-select formControlName="status">
+          @for (status of statuses; track status) {
+            <mat-option [value]="status">{{ 'status.employee.' + status | transloco }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
+    @if (canEdit()) {
+      <div class="actions">
+        <button matButton="filled" type="submit" [disabled]="saving()" data-testid="save-employee">
+          {{ (isNew() ? 'employees.create' : 'common.save') | transloco }}
+        </button>
+        <a matButton routerLink="/hr/employees">{{ 'common.cancel' | transloco }}</a>
+      </div>
+    }
+  </form>
+}
