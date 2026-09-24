@@ -14,6 +14,7 @@ import {
   isEditable,
   presentClaim,
   presentReceipt,
+  resolveApprovers,
   sniffContentType,
 } from '../claims-engine';
 import { MockClaim } from '../claims-seed';
@@ -186,6 +187,14 @@ export const claimHandlers = [
         return problem(422, 'CLAIM_HAS_BLOCKING_FINDINGS');
       }
       const me = currentPersona()!;
+      const evaluation = evaluate(claim, store);
+      claim.submittedFindings = evaluation.findings;
+      claim.claimantName ??= me.displayName;
+      claim.approval = {
+        approverIds: resolveApprovers(store, claim.ownerId, evaluation.total),
+        step: 1,
+        decisions: claim.approval?.decisions ?? [],
+      };
       const resubmission = claim.status === 'NEEDS_CHANGES';
       claim.status = 'SUBMITTED';
       claim.submittedAt = new Date().toISOString();
@@ -353,8 +362,13 @@ export const claimHandlers = [
     }
     const file = getFile(String(params['receiptId']));
     if (!file) return new HttpResponse('NoSuchKey', { status: 404 });
+    // Like S3 response-content-disposition: exports download under their file name.
+    const downloadName = url.searchParams.get('download');
+    const disposition = downloadName
+      ? `attachment; filename="${downloadName.replace(/"/g, '')}"`
+      : 'inline';
     return new HttpResponse(file.bytes, {
-      headers: { 'Content-Type': file.type, 'Content-Disposition': 'inline' },
+      headers: { 'Content-Type': file.type, 'Content-Disposition': disposition },
     });
   }),
 ];

@@ -1,4 +1,4 @@
-import { Claim, Policy, Receipt } from '../app/api/models';
+import { ApprovalDecisionType, Claim, Policy, PolicyFinding, Receipt } from '../app/api/models';
 
 /** Server-side receipt fields that never leave the mock "backend". */
 export interface ReceiptMeta {
@@ -13,10 +13,34 @@ export interface ReceiptMeta {
 
 export type MockReceipt = Receipt & { meta: ReceiptMeta };
 
+export interface MockDecision {
+  step: number;
+  approverId: string;
+  decision: ApprovalDecisionType;
+  reason: string | null;
+  at: string;
+}
+
+/** Approval state kept by the backend; the route is fixed when the claim is submitted. */
+export interface MockApproval {
+  /** Approver user id for each step. */
+  approverIds: string[];
+  /** 1-based step currently waiting for a decision. */
+  step: number;
+  decisions: MockDecision[];
+}
+
 /** Claims are stored with their owner; totals, findings and actions are computed on read. */
 export type MockClaim = Omit<Claim, 'receipts' | 'findings' | 'allowedActions' | 'totalAmount'> & {
   ownerId: string;
+  claimantName?: string;
+  departmentName?: string | null;
   receipts: MockReceipt[];
+  approval?: MockApproval;
+  /** Findings as evaluated at submission, shown to reviewers unchanged. */
+  submittedFindings?: PolicyFinding[];
+  approvedAt?: string | null;
+  batchId?: string | null;
 };
 
 export type MockPolicy = Policy;

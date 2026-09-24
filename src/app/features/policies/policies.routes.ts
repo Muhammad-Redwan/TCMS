@@ -8,6 +8,12 @@ export const POLICY_ROUTES: Routes = [
     loadComponent: () => import('./policy-list.page').then((m) => m.PolicyListPage),
   },
   {
+    // Before :policyId so it is not read as a policy id.
+    path: 'approval-route',
+    canDeactivate: [unsavedChangesGuard],
+    loadComponent: () => import('./approval-route.page').then((m) => m.ApprovalRoutePage),
+  },
+  {
     path: 'new',
     canActivate: [permissionGuard('policies.write')],
     canDeactivate: [unsavedChangesGuard],

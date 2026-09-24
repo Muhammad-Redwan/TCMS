@@ -1,0 +1,257 @@
+<nav class="breadcrumb">
+  <a routerLink="/finance/settlements/batches">{{ 'finance.batches' | transloco }}</a>
+</nav>
+
+@if (batch.error(); as error) {
+  <app-error-alert [error]="error" [retryable]="true" (retry)="batch.reload()" />
+} @else if (batch.value(); as record) {
+  @let b = record.data;
+  <header class="page-header">
+    <h2 class="title">
+      <bdi>{{ b.number }}</bdi>
+    </h2>
+    <app-status-badge
+      namespace="status.batch"
+      [value]="b.status"
+      [tones]="tones"
+      data-testid="batch-status"
+    />
+  </header>
+
+  <dl class="summary">
+    <div>
+      <dt>{{ 'finance.claimCount' | transloco }}</dt>
+      <dd data-testid="batch-count">{{ b.claimCount }}</dd>
+    </div>
+    <div>
+      <dt>{{ 'claims.fields.total' | transloco }}</dt>
+      <dd class="total" data-testid="batch-total">
+        <bdi>{{ b.totalAmount | money: b.currency }}</bdi>
+      </dd>
+    </div>
+    <div>
+      <dt>{{ 'finance.createdAt' | transloco }}</dt>
+      <dd>{{ b.createdAt | tenantDate }}</dd>
+    </div>
+  </dl>
+
+  @if (actionError(); as error) {
+    @if (conflict()) {
+      <div class="conflict" role="alert" data-testid="conflict">
+        <p>{{ 'errors.' + error.code | transloco }}</p>
+        <button matButton="outlined" type="button" (click)="reloadLatest()">
+          {{ 'common.reloadLatest' | transloco }}
+        </button>
+      </div>
+    } @else if (error.fieldErrors.length === 0) {
+      <app-error-alert [error]="error" />
+    }
+  }
+
+  <section
+    class="panel"
+    aria-labelledby="export-heading"
+    aria-live="polite"
+    data-testid="export-section"
+  >
+    <h3 id="export-heading">{{ 'finance.export.title' | transloco }}</h3>
+    @switch (b.status) {
+      @case ('DRAFT') {
+        <p>{{ 'finance.export.draft' | transloco }}</p>
+      }
+      @case ('EXPORT_PENDING') {
+        <p>{{ 'finance.export.pending' | transloco }}</p>
+        @if (job(); as j) {
+          @if (j.total) {
+            <mat-progress-bar
+              mode="determinate"
+              [value]="((j.processed ?? 0) / j.total) * 100"
+              [attr.aria-label]="'finance.export.title' | transloco"
+            />
+            <p class="muted">{{ 'status.job.' + j.status | transloco }}</p>
+          }
+        } @else {
+          <mat-progress-bar
+            mode="indeterminate"
+            [attr.aria-label]="'finance.export.title' | transloco"
+          />
+        }
+        @if (pollingStopped()) {
+          <p class="muted" role="status">{{ 'tenants.provisioning.stale' | transloco }}</p>
+        }
+      }
+      @case ('EXPORT_CREATED') {
+        <p class="not-paid" data-testid="not-paid">
+          {{ 'finance.export.createdNotPaid' | transloco }}
+        </p>
+      }
+      @case ('EXPORT_FAILED') {
+        <p class="failed" role="alert">{{ 'finance.export.failed' | transloco }}</p>
+      }
+      @case ('PAYMENT_RECORDED') {
+        <p>{{ 'finance.export.paid' | transloco }}</p>
+      }
+    }
+
+    @if (b.exports.length > 0) {
+      <ul class="files" data-testid="exports">
+        @for (file of b.exports; track file.id) {
+          <li>
+            <span
+              ><bdi>{{ file.fileName }}</bdi></span
+            >
+            <span class="muted"
+              >{{ 'finance.export.id' | transloco }}
+              <bdi
+                ><code>{{ file.id }}</code></bdi
+              ></span
+            >
+            <span class="muted">{{ file.createdAt | tenantDate }}</span>
+            @if (file.expiresAt) {
+              <span class="muted">{{
+                'finance.export.expires' | transloco: { date: (file.expiresAt | tenantDate) }
+              }}</span>
+            }
+            <button
+              matButton
+              type="button"
+              (click)="download(file.id, file.fileName)"
+              [attr.data-testid]="'download-' + file.id"
+              [disabled]="busy()"
+            >
+              {{ 'finance.export.download' | transloco }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (canExport()) {
+      <button
+        matButton="outlined"
+        type="button"
+        [disabled]="busy()"
+        (click)="exportCsv()"
+        data-testid="export-csv"
+      >
+        {{ (b.exports.length ? 'finance.export.again' : 'finance.export.csv') | transloco }}
+      </button>
+    }
+  </section>
+
+  <section class="panel" aria-labelledby="payment-heading" data-testid="payment-section">
+    <h3 id="payment-heading">{{ 'finance.payment.title' | transloco }}</h3>
+    @if (b.payment; as payment) {
+      <dl class="evidence" data-testid="payment-evidence">
+        <dt>{{ 'finance.payment.reference' | transloco }}</dt>
+        <dd>
+          <bdi>{{ payment.reference }}</bdi>
+        </dd>
+        <dt>{{ 'finance.payment.paidOn' | transloco }}</dt>
+        <dd>{{ payment.paidOn | tenantDate: 'date' }}</dd>
+        <dt>{{ 'finance.payment.method' | transloco }}</dt>
+        <dd>{{ 'finance.methods.' + payment.method | transloco }}</dd>
+        @if (payment.note) {
+          <dt>{{ 'finance.payment.note' | transloco }}</dt>
+          <dd dir="auto">{{ payment.note }}</dd>
+        }
+        <dt>{{ 'finance.payment.recordedBy' | transloco }}</dt>
+        <dd>
+          <bdi>{{ payment.recordedBy }}</bdi> · {{ payment.recordedAt | tenantDate }}
+        </dd>
+      </dl>
+    } @else if (canRecordPayment()) {
+      <p class="muted">{{ 'finance.payment.intro' | transloco }}</p>
+      <form [formGroup]="form" (ngSubmit)="recordPayment()" novalidate class="form-grid">
+        <mat-form-field>
+          <mat-label>{{ 'finance.payment.reference' | transloco }}</mat-label>
+          <input
+            matInput
+            formControlName="reference"
+            required
+            dir="auto"
+            data-testid="payment-reference"
+          />
+          <mat-error
+            ><app-field-error
+              [control]="form.controls.reference"
+              [errors]="form.controls.reference.errors"
+          /></mat-error>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>{{ 'finance.payment.paidOn' | transloco }}</mat-label>
+          <input
+            matInput
+            type="date"
+            formControlName="paidOn"
+            required
+            data-testid="payment-date"
+          />
+          <mat-error
+            ><app-field-error
+              [control]="form.controls.paidOn"
+              [errors]="form.controls.paidOn.errors"
+          /></mat-error>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>{{ 'finance.payment.method' | transloco }}</mat-label>
+          <mat-select formControlName="method" required>
+            @for (m of methods; track m) {
+              <mat-option [value]="m">{{ 'finance.methods.' + m | transloco }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>{{ 'finance.payment.note' | transloco }}</mat-label>
+          <input matInput formControlName="note" dir="auto" />
+        </mat-form-field>
+        <div class="actions">
+          <button matButton="filled" type="submit" [disabled]="busy()" data-testid="record-payment">
+            {{ 'finance.recordPayment' | transloco }}
+          </button>
+        </div>
+      </form>
+    } @else {
+      <p class="muted" data-testid="payment-waiting">
+        {{ 'finance.payment.needsExport' | transloco }}
+      </p>
+    }
+  </section>
+
+  <h3>{{ 'finance.claims' | transloco }}</h3>
+  <div class="table-scroll">
+    <table class="claims" data-testid="batch-claims">
+      <caption class="visually-hidden">
+        {{
+          'finance.claims' | transloco
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">{{ 'claims.fields.number' | transloco }}</th>
+          <th scope="col">{{ 'approvals.claimant' | transloco }}</th>
+          <th scope="col">{{ 'claims.fields.period' | transloco }}</th>
+          <th scope="col" class="amount">{{ 'claims.fields.total' | transloco }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of b.claims; track c.claimId) {
+          <tr>
+            <td>
+              <bdi>{{ c.claimNumber }}</bdi>
+            </td>
+            <td>
+              <bdi>{{ c.claimantName }}</bdi>
+            </td>
+            <td>{{ period(c.period) }}</td>
+            <td class="amount">
+              <bdi>{{ c.totalAmount | money: c.currency }}</bdi>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <mat-progress-bar mode="indeterminate" [attr.aria-label]="'common.loading' | transloco" />
+}

@@ -1,12 +1,15 @@
 import { http, HttpResponse } from 'msw';
 import { AppConfig } from '../app/core/config/app-config';
+import { approvalHandlers } from './api/approvals';
 import { claimHandlers } from './api/claims';
 import { employeeHandlers } from './api/employees';
 import { organizationHandlers } from './api/organization';
 import { policyHandlers } from './api/policies';
+import { settlementHandlers } from './api/settlements';
 import { tenantHandlers } from './api/tenants';
 import { userHandlers } from './api/users';
 import { currentPersona, problem } from './http-helpers';
+import { jobHandlers } from './jobs';
 import { PERSONA_STORAGE_KEY } from './personas';
 
 /** Mock mode signs in through a local page instead of the gateway + Keycloak. */
@@ -41,6 +44,9 @@ export const handlers = [
   ...userHandlers,
   ...policyHandlers,
   ...claimHandlers,
+  ...approvalHandlers,
+  ...settlementHandlers,
+  ...jobHandlers,
 
   // Any API route not mocked yet answers like a real missing endpoint would.
   http.all('/api/*', () => problem(404, 'NOT_FOUND')),

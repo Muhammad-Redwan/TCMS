@@ -17,7 +17,8 @@ import { createDepartment, updateDepartment } from '../../api/functions';
 import { Department, DepartmentWrite } from '../../api/models';
 import { ApiError, isApiError } from '../../core/errors/api-error';
 import { etagFromVersion, newIdempotencyKey } from '../../core/http/versioned';
-import { EmployeePicker } from '../../shared/forms/employee-picker';
+import { employeeSearch } from '../../shared/forms/picker-searches';
+import { SearchPicker } from '../../shared/forms/search-picker';
 import { FieldErrorText } from '../../shared/forms/field-error';
 import { applyServerErrors, focusFirstInvalid } from '../../shared/forms/server-errors';
 import { ErrorAlert } from '../../shared/ui/error-alert';
@@ -41,7 +42,7 @@ export interface DepartmentDialogData {
     MatLabel,
     MatError,
     MatInput,
-    EmployeePicker,
+    SearchPicker,
     FieldErrorText,
     ErrorAlert,
   ],
@@ -71,10 +72,11 @@ export interface DepartmentDialogData {
             <app-field-error [control]="form.controls.name" [errors]="form.controls.name.errors" />
           </mat-error>
         </mat-form-field>
-        <app-employee-picker
+        <app-search-picker
           formControlName="managerId"
           [label]="'departments.fields.manager' | transloco"
-          [initialName]="data.department?.managerName ?? null"
+          [search]="employeeSearch"
+          [initialLabel]="data.department?.managerName ?? null"
         />
       </mat-dialog-content>
       <mat-dialog-actions align="end">
@@ -99,6 +101,7 @@ export interface DepartmentDialogData {
   `,
 })
 export class DepartmentDialog {
+  protected readonly employeeSearch = employeeSearch();
   private readonly api = inject(Api);
   private readonly ref = inject<MatDialogRef<DepartmentDialog, Department>>(MatDialogRef);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);

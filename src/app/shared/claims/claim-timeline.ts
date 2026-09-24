@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TimelineEvent } from '../../api/models';
-import { TenantDatePipe } from '../../shared/format/tenant-date.pipe';
+import { TenantDatePipe } from '../format/tenant-date.pipe';
 
 /** Claim history, newest first. Reviewer notes are shown as written (user content, isolated). */
 @Component({

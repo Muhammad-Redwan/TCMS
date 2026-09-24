@@ -1,0 +1,133 @@
+<nav class="breadcrumb">
+  <a routerLink="/approvals">{{ 'approvals.title' | transloco }}</a>
+</nav>
+
+@if (approval.error(); as error) {
+  <app-error-alert [error]="error" [retryable]="true" (retry)="approval.reload()" />
+} @else if (approval.value(); as record) {
+  @let view = record.data;
+  @let claim = view.claim;
+  <header class="page-header">
+    <h1>
+      <bdi>{{ claim.number }}</bdi> · {{ period(claim.period) }}
+    </h1>
+    <app-status-badge
+      namespace="status.claim"
+      [value]="claim.status"
+      [tones]="tones"
+      data-testid="claim-status"
+    />
+  </header>
+
+  <dl class="summary">
+    <div>
+      <dt>{{ 'approvals.claimant' | transloco }}</dt>
+      <dd>
+        <bdi>{{ view.claimantName }}</bdi>
+        @if (view.departmentName) {
+          · <bdi>{{ view.departmentName }}</bdi>
+        }
+      </dd>
+    </div>
+    <div>
+      <dt>{{ 'claims.fields.total' | transloco }}</dt>
+      <dd class="total" data-testid="approval-total">
+        <bdi>{{ claim.totalAmount | money: claim.currency }}</bdi>
+      </dd>
+    </div>
+    <div>
+      <dt>{{ 'approvals.step' | transloco }}</dt>
+      <dd>{{ 'approvals.stepOf' | transloco: { step: view.step, total: view.totalSteps } }}</dd>
+    </div>
+    @if (claim.policyVersion) {
+      <div>
+        <dt>{{ 'approvals.policy' | transloco }}</dt>
+        <dd>{{ 'policies.versionLabel' | transloco: { version: claim.policyVersion } }}</dd>
+      </div>
+    }
+  </dl>
+
+  <app-claim-findings [findings]="claim.findings" [currency]="claim.currency" />
+
+  <h2>{{ 'claims.trips.title' | transloco }}</h2>
+  <app-claim-items
+    [items]="claim.items"
+    [receipts]="claim.receipts"
+    [currency]="claim.currency"
+    [findings]="claim.findings"
+    (openReceipt)="openReceipt($event)"
+  />
+
+  @if (actionError(); as error) {
+    @if (conflict()) {
+      <div class="conflict" role="alert" data-testid="conflict">
+        <p>{{ 'approvals.conflict' | transloco }}</p>
+      </div>
+    } @else if (error.fieldErrors.length === 0) {
+      <app-error-alert [error]="error" />
+    }
+  }
+
+  @if (canDecide()) {
+    <form
+      [formGroup]="form"
+      (ngSubmit)="decide()"
+      novalidate
+      class="decision"
+      data-testid="decision-form"
+    >
+      <h2 id="decision-heading">{{ 'approvals.decisionTitle' | transloco }}</h2>
+      <mat-radio-group
+        formControlName="decision"
+        aria-labelledby="decision-heading"
+        class="choices"
+        [class.invalid]="form.controls.decision.invalid && form.controls.decision.touched"
+      >
+        @for (option of view.allowedDecisions; track option) {
+          <mat-radio-button [value]="option" [attr.data-testid]="'decision-' + option">
+            {{ 'approvals.decisions.' + option | transloco }}
+          </mat-radio-button>
+        }
+      </mat-radio-group>
+      @if (form.controls.decision.invalid && form.controls.decision.touched) {
+        <p class="field-error" role="alert">{{ 'approvals.chooseDecision' | transloco }}</p>
+      }
+
+      <mat-form-field class="reason">
+        <mat-label>
+          {{
+            (reasonRequired() ? 'approvals.reasonRequired' : 'approvals.reasonOptional') | transloco
+          }}
+        </mat-label>
+        <textarea
+          matInput
+          formControlName="reason"
+          rows="3"
+          dir="auto"
+          [required]="reasonRequired()"
+          [attr.maxlength]="reasonMax"
+          data-testid="decision-reason"
+        ></textarea>
+        <mat-hint>{{ 'approvals.reasonHint' | transloco }}</mat-hint>
+        <mat-error>
+          <app-field-error
+            [control]="form.controls.reason"
+            [errors]="form.controls.reason.errors"
+          />
+        </mat-error>
+      </mat-form-field>
+
+      <div class="actions">
+        <button matButton="filled" type="submit" [disabled]="busy()" data-testid="submit-decision">
+          {{ 'approvals.submitDecision' | transloco }}
+        </button>
+      </div>
+    </form>
+  } @else {
+    <p class="notice" data-testid="no-decision">{{ 'approvals.noDecision' | transloco }}</p>
+  }
+
+  <app-claim-timeline [events]="claim.timeline" />
+} @else {
+  <mat-progress-bar mode="indeterminate" [attr.aria-label]="'common.loading' | transloco" />
+}

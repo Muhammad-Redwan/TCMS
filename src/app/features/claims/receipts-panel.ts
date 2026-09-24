@@ -9,7 +9,7 @@ import { Receipt, ReceiptUploadPolicy } from '../../api/models';
 import { isApiError } from '../../core/errors/api-error';
 import { Confirmation } from '../../shared/ui/confirm-dialog';
 import { StatusBadge } from '../../shared/ui/status-badge';
-import { SCAN_STATUS_TONES } from './claim-status';
+import { SCAN_STATUS_TONES } from '../../shared/claims/claim-status';
 import { precheck, ReceiptUploader, StorageUploadError } from './receipt-upload';
 
 interface PendingUpload {

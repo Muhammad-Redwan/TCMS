@@ -1,11 +1,10 @@
 import { http, HttpResponse } from 'msw';
-import { Job, Tenant, TenantCreate } from '../../app/api/models';
+import { Tenant, TenantCreate } from '../../app/api/models';
 import { db, MockDb, nextId, save } from '../db';
 import { denyUnless, EMAIL, idempotent, latency, matches, paged, problem } from '../http-helpers';
+import { advanceJobs, onJobFinished, startJob } from '../jobs';
 
-/** Provisioning timeline in mock mode: queued 1.5 s, then running with progress until 6 s. */
-const QUEUED_MS = 1500;
-const DONE_MS = 6000;
+/** Provisioning steps shown as progress in mock mode. */
 const STEPS = 4;
 
 export const tenantHandlers = [
@@ -90,25 +89,6 @@ export const tenantHandlers = [
       });
     },
   ),
-
-  http.get('/api/v1/jobs/:jobId', async ({ params }) => {
-    await latency();
-    const store = db();
-    advanceJobs(store);
-    const job = store.jobs.find((j) => j.id === params['jobId']);
-    if (!job) return problem(404, 'NOT_FOUND');
-    // Only the contract fields leave the mock; timing internals stay private.
-    const publicJob: Job = {
-      id: job.id,
-      type: job.type,
-      status: job.status,
-      processed: job.processed,
-      total: job.total,
-      errorCode: job.errorCode,
-      updatedAt: job.updatedAt,
-    };
-    return HttpResponse.json(publicJob);
-  }),
 ];
 
 /** Mock rule: a tenant whose name contains "fail" fails provisioning, to demo the FAILED state. */
@@ -117,19 +97,7 @@ function startProvisioning(
   tenant: Tenant,
   fails = /fail/i.test(tenant.displayName),
 ) {
-  const job = {
-    id: nextId('job'),
-    type: 'TENANT_PROVISIONING' as const,
-    status: 'QUEUED' as Job['status'],
-    processed: 0,
-    total: STEPS,
-    errorCode: null,
-    updatedAt: new Date().toISOString(),
-    startedAt: Date.now(),
-    fails,
-    tenantId: tenant.id,
-  };
-  store.jobs.push(job);
+  const job = startJob(store, 'TENANT_PROVISIONING', tenant.id, { total: STEPS, fails });
   Object.assign(tenant, {
     status: 'PROVISIONING',
     provisioningJobId: job.id,
@@ -137,45 +105,13 @@ function startProvisioning(
   });
 }
 
-/** Moves jobs (and their tenants) forward according to elapsed time. */
-function advanceJobs(store: MockDb) {
-  let changed = false;
-  for (const job of store.jobs) {
-    if (job.status === 'SUCCEEDED' || job.status === 'FAILED') continue;
-    const elapsed = Date.now() - job.startedAt;
-    const tenant = store.tenants.find((t) => t.id === job.tenantId);
-    if (elapsed < QUEUED_MS) continue;
-    if (elapsed < DONE_MS) {
-      const processed = Math.min(
-        STEPS - 1,
-        Math.floor(((elapsed - QUEUED_MS) / (DONE_MS - QUEUED_MS)) * STEPS),
-      );
-      if (job.status !== 'RUNNING' || job.processed !== processed) {
-        Object.assign(job, { status: 'RUNNING', processed, updatedAt: new Date().toISOString() });
-        changed = true;
-      }
-      continue;
-    }
-    changed = true;
-    if (job.fails) {
-      Object.assign(job, {
-        status: 'FAILED',
-        errorCode: 'PROVISIONING_FAILED',
-        updatedAt: new Date().toISOString(),
-      });
-      if (tenant)
-        Object.assign(tenant, {
-          status: 'FAILED',
-          failureReference: `PRV-${job.id.slice(-4).toUpperCase()}`,
-        });
-    } else {
-      Object.assign(job, {
-        status: 'SUCCEEDED',
-        processed: STEPS,
-        updatedAt: new Date().toISOString(),
-      });
-      if (tenant) tenant.status = 'READY';
-    }
-  }
-  if (changed) save();
-}
+onJobFinished('TENANT_PROVISIONING', (store, job, succeeded) => {
+  const tenant = store.tenants.find((t) => t.id === job.subjectId);
+  if (!tenant) return;
+  if (succeeded) tenant.status = 'READY';
+  else
+    Object.assign(tenant, {
+      status: 'FAILED',
+      failureReference: `PRV-${job.id.slice(-4).toUpperCase()}`,
+    });
+});

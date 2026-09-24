@@ -2,7 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { PolicyFinding } from '../../api/models';
 import { LocaleService } from '../../core/i18n/locale.service';
-import { formatMoney } from '../../shared/format/money';
+import { formatMoney } from '../format/money';
 
 /** Finding parameters that carry money amounts. */
 const AMOUNT_PARAMS = ['limit', 'threshold'];

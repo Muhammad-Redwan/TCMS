@@ -17,7 +17,7 @@ import { TenantDatePipe } from '../../shared/format/tenant-date.pipe';
 import { ListQueryState, PAGE_SIZES } from '../../shared/table/list-query';
 import { ErrorAlert } from '../../shared/ui/error-alert';
 import { StatusBadge } from '../../shared/ui/status-badge';
-import { CLAIM_STATUS_TONES, CLAIM_STATUSES, formatPeriod } from './claim-status';
+import { CLAIM_STATUS_TONES, CLAIM_STATUSES, formatPeriod } from '../../shared/claims/claim-status';
 
 /** My claims (C01). Totals shown are the server's; the client never adds amounts up. */
 @Component({

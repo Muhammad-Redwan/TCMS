@@ -101,6 +101,13 @@
       "SCANNING": "Scanning",
       "CLEAN": "Ready",
       "REJECTED": "Rejected"
+    },
+    "batch": {
+      "DRAFT": "Draft",
+      "EXPORT_PENDING": "Exporting",
+      "EXPORT_CREATED": "Exported, not paid",
+      "EXPORT_FAILED": "Export failed",
+      "PAYMENT_RECORDED": "Paid"
     }
   },
   "errors": {
@@ -127,7 +134,18 @@
     "TOO_MANY_RECEIPTS": "This claim already has the maximum number of receipts.",
     "UPLOAD_NOT_FOUND": "The file did not finish uploading. Try again.",
     "RECEIPT_NOT_AVAILABLE": "This receipt is not available to view yet.",
-    "NO_POLICY_IN_FORCE": "No transportation policy is in force yet."
+    "NO_POLICY_IN_FORCE": "No transportation policy is in force yet.",
+    "SELF_APPROVAL": "You cannot decide on your own claim.",
+    "ALREADY_DECIDED": "This claim was already decided. The page shows its current state.",
+    "CLAIM_ALREADY_BATCHED": "Some of these claims were added to another batch. The list has been refreshed.",
+    "MIXED_CURRENCIES": "A batch can only contain claims in one currency.",
+    "BATCH_NOT_EXPORTABLE": "This batch cannot be exported right now.",
+    "EXPORT_FORMAT_UNAVAILABLE": "This export format is not available.",
+    "EXPORT_EXPIRED": "This export file has expired. Create a new export.",
+    "PAYMENT_REQUIRES_EXPORT": "Export the batch before recording payment.",
+    "PAYMENT_ALREADY_RECORDED": "Payment was already recorded for this batch.",
+    "SETTLEMENT_EXPORT_FAILED": "The export failed.",
+    "TENANT_PROVISIONING_FAILED": "Provisioning failed."
   },
   "common": {
     "all": "All",
@@ -161,10 +179,14 @@
       "ABOVE_MONTHLY_LIMIT": "The per-trip limit cannot be higher than the monthly limit.",
       "INVALID_NUMBER": "Enter a whole number of 0 or more.",
       "EFFECTIVE_DATE_TAKEN": "Another published version already starts on this date.",
-      "EFFECTIVE_DATE_IN_PAST": "A new version cannot start in the past."
+      "EFFECTIVE_DATE_IN_PAST": "A new version cannot start in the past.",
+      "APPROVER_NOT_ACTIVE": "Choose an active user.",
+      "TOO_LONG": "This text is too long.",
+      "FUTURE_DATE": "The date cannot be in the future."
     },
     "amount": "Enter a positive amount with at most {{digits}} decimal places.",
-    "min": "Enter {{min}} or more."
+    "min": "Enter {{min}} or more.",
+    "maxlength": "Use at most {{requiredLength}} characters."
   },
   "unsaved": {
     "title": "Leave without saving?",
@@ -488,6 +510,123 @@
         "EXPORTED": "Exported for payment",
         "SETTLED": "Paid"
       }
+    }
+  },
+  "routing": {
+    "title": "Approval routing",
+    "intro": "Decide who approves claims. Nobody is ever asked to approve their own claim. Changes apply to claims submitted afterwards.",
+    "firstApprover": "First approver",
+    "first": {
+      "LINE_MANAGER": "Employee's manager",
+      "DEPARTMENT_MANAGER": "Department manager"
+    },
+    "fallback": "Fallback approver",
+    "fallbackHint": "Used when the employee has no manager, or is the manager.",
+    "secondToggle": "Require a second approval above an amount",
+    "secondAbove": "Second approval above",
+    "secondApprover": "Second approver",
+    "saved": "Approval routing saved."
+  },
+  "approvals": {
+    "title": "Approvals",
+    "pending": "Waiting for me",
+    "decided": "Decided by me",
+    "empty": "Nothing is waiting for your decision.",
+    "emptyDecided": "You have not decided any claims yet.",
+    "claimant": "Employee",
+    "forReview": "For review",
+    "warnings": "{{count}} to check",
+    "step": "Step",
+    "stepOf": "{{step}} of {{total}}",
+    "submittedAt": "Submitted",
+    "yourDecision": "Your decision",
+    "policy": "Policy",
+    "decisionTitle": "Your decision",
+    "chooseDecision": "Choose a decision.",
+    "reasonRequired": "Reason (required)",
+    "reasonOptional": "Comment (optional)",
+    "reasonHint": "The employee will see this.",
+    "submitDecision": "Submit decision",
+    "noDecision": "This claim is not waiting for your decision.",
+    "conflict": "Someone else decided this claim first. The page now shows its current state; your decision was not recorded.",
+    "decisions": {
+      "APPROVE": "Approve",
+      "REJECT": "Reject",
+      "REQUEST_CHANGES": "Request changes"
+    },
+    "confirm": {
+      "APPROVE": {
+        "title": "Approve {{number}}?",
+        "body": "{{name}} · {{total}}. The claim moves on for settlement or the next approval."
+      },
+      "REJECT": {
+        "title": "Reject {{number}}?",
+        "body": "{{name}} · {{total}}. The employee will see your reason. This cannot be undone."
+      },
+      "REQUEST_CHANGES": {
+        "title": "Request changes to {{number}}?",
+        "body": "{{name}} · {{total}}. The claim returns to the employee with your reason."
+      }
+    },
+    "done": {
+      "APPROVE": "{{number}} approved.",
+      "REJECT": "{{number}} rejected.",
+      "REQUEST_CHANGES": "Changes requested on {{number}}."
+    }
+  },
+  "finance": {
+    "title": "Settlements",
+    "queue": "Ready to settle",
+    "batches": "Batches",
+    "batch": "Batch",
+    "claims": "Claims in this batch",
+    "queueEmpty": "No approved claims are waiting for settlement.",
+    "batchesEmpty": "No batches yet.",
+    "selected": "{{count}} selected",
+    "selectAll": "Select all on this page",
+    "createBatch": "Create batch",
+    "createConfirm": {
+      "title": "Create a batch?",
+      "body": "{{count}} claims will be grouped. TCMS calculates the batch total."
+    },
+    "batchCreated": "Batch {{number}} created.",
+    "approvedAt": "Approved",
+    "claimCount": "Claims",
+    "createdAt": "Created",
+    "recordPayment": "Record payment",
+    "paymentRecorded": "Payment recorded. The claims are now settled.",
+    "paymentConfirm": {
+      "title": "Record payment for {{number}}?",
+      "body": "{{count}} claims, {{total}}. They will be marked as paid."
+    },
+    "methods": {
+      "BANK_TRANSFER": "Bank transfer",
+      "PAYROLL": "Payroll",
+      "CHEQUE": "Cheque",
+      "CASH": "Cash"
+    },
+    "export": {
+      "title": "Export for payment",
+      "draft": "Export the batch to send it for payment.",
+      "pending": "Creating the export file…",
+      "createdNotPaid": "Export ready. The claims are not paid until you record the payment below.",
+      "failed": "The export failed. Try again.",
+      "paid": "Payment has been recorded for this batch.",
+      "csv": "Export CSV",
+      "again": "Export again",
+      "download": "Download",
+      "id": "Export ID",
+      "expires": "Available until {{date}}"
+    },
+    "payment": {
+      "title": "Payment",
+      "intro": "Record the payment once the money has been sent. Only then are the claims settled.",
+      "needsExport": "Export the batch before recording payment.",
+      "reference": "Payment reference",
+      "paidOn": "Paid on",
+      "method": "Method",
+      "note": "Note",
+      "recordedBy": "Recorded by"
     }
   }
 }

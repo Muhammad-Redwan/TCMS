@@ -28,11 +28,16 @@ import { POLICY_STATUS_TONES } from './policy-status';
   template: `
     <header class="page-header">
       <h1>{{ 'policies.title' | transloco }}</h1>
-      @if (canWrite()) {
-        <a matButton="filled" routerLink="new" data-testid="create-policy">
-          {{ 'policies.create' | transloco }}
+      <div class="header-actions">
+        <a matButton="outlined" routerLink="approval-route" data-testid="open-routing">
+          {{ 'routing.title' | transloco }}
         </a>
-      }
+        @if (canWrite()) {
+          <a matButton="filled" routerLink="new" data-testid="create-policy">
+            {{ 'policies.create' | transloco }}
+          </a>
+        }
+      </div>
     </header>
     <p class="muted">{{ 'policies.intro' | transloco }}</p>
 
@@ -84,6 +89,11 @@ import { POLICY_STATUS_TONES } from './policy-status';
     }
   `,
   styles: `
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
     .muted {
       color: var(--mat-sys-on-surface-variant);
       max-width: 48rem;

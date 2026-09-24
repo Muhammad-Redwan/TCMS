@@ -1,4 +1,6 @@
-import { Department, Employee, Job, Organization, Role, Tenant, User } from '../app/api/models';
+import { Department, Employee, Organization, Role, Tenant, User } from '../app/api/models';
+import type { MockJob } from './jobs';
+import { MockBatch, MockRoute, seedBatches, seedReviewClaims, seedRoute } from './approvals-seed';
 import { MockClaim, MockPolicy, seedClaims, seedPolicies } from './claims-seed';
 import { clearFiles } from './file-store';
 
@@ -12,10 +14,12 @@ export interface MockDb {
   employees: Employee[];
   tenants: Tenant[];
   /** Jobs store their start time so status advances with the clock. */
-  jobs: (Job & { startedAt: number; fails: boolean; tenantId?: string })[];
+  jobs: MockJob[];
   users: User[];
   policies: MockPolicy[];
   claims: MockClaim[];
+  approvalRoute: MockRoute;
+  batches: MockBatch[];
   idempotency: Record<string, { status: number; body: unknown }>;
   seq: number;
 }
@@ -182,7 +186,9 @@ function seed(): MockDb {
     jobs: [],
     users,
     policies: seedPolicies(),
-    claims: seedClaims(),
+    claims: [...seedClaims(), ...seedReviewClaims()],
+    approvalRoute: seedRoute(),
+    batches: seedBatches(),
     idempotency: {},
     seq: 1000,
   };
@@ -241,6 +247,11 @@ export function db(): MockDb {
     // Data saved by an older mock version: add the collections introduced since.
     cache.policies ??= seedPolicies();
     cache.claims ??= seedClaims();
+    if (!cache.approvalRoute) {
+      cache.claims.push(...seedReviewClaims());
+      cache.approvalRoute = seedRoute();
+    }
+    cache.batches ??= seedBatches();
   } catch {
     cache = seed();
   }

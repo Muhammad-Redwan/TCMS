@@ -1,5 +1,5 @@
 import { ClaimStatus, ScanStatus } from '../../api/models';
-import { BadgeTone } from '../../shared/ui/status-badge';
+import { BadgeTone } from '../ui/status-badge';
 
 export const CLAIM_STATUSES: ClaimStatus[] = [
   'DRAFT',

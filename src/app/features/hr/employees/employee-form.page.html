@@ -101,11 +101,12 @@
       </mat-error>
     </mat-form-field>
 
-    <app-employee-picker
+    <app-search-picker
       formControlName="managerId"
       [label]="'employees.fields.manager' | transloco"
+      [search]="employeeSearch"
       [excludeId]="employeeId() ?? null"
-      [initialName]="loaded.value()?.data?.managerName ?? null"
+      [initialLabel]="loaded.value()?.data?.managerName ?? null"
     />
 
     @if (!isNew()) {

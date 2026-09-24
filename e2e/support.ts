@@ -6,6 +6,7 @@ export async function signInAs(page: Page, persona: string, startUrl = '/'): Pro
   await expect(page).toHaveURL(/\/login/);
   await page.getByTestId('sign-in').click();
   await page.getByTestId(`persona-${persona}`).click();
-  // Wait for the post-login page load to finish before the test navigates again.
-  await expect(page.getByTestId('sign-out')).toBeVisible();
+  // Wait for the post-login page load to finish before the test navigates again. The first
+  // visit to a lazy route compiles it in the dev server, which is slow under parallel load.
+  await expect(page.getByTestId('sign-out')).toBeVisible({ timeout: 15_000 });
 }

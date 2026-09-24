@@ -87,5 +87,8 @@ These come from the frontend guide (`../TCMS_FRONTEND_README.md`) and strategy (
 - Money: amounts are decimal strings; show with the `money` pipe / `formatMoney`, edit with `appAmountInput` + `amountValidator(currency)`. Never parse amounts to `number` or add them up client-side.
 - Receipts: `ReceiptUploader` (reserve slot → XHR PUT to the presigned URL → complete); pre-check with `precheck()` and never show a refused file as attached; poll while `SCANNING`.
 - Claim screens render only `allowedActions` from the server; submit goes through `ClaimSubmitter` (idempotency key kept only when the outcome is unknown).
+- Files from presigned URLs are opened or downloaded with `openFileInNewTab` / `downloadFile` (fetch → blob URL), never by navigating to the storage URL: navigations bypass the mock service worker, and the page must stay put.
+- Pickers over users or employees use `<app-search-picker>` with `employeeSearch()` / `userSearch()`.
+- Claim display pieces shared across features (`ClaimFindings`, `ClaimItems`, `ClaimTimeline`, claim status helpers) live in `shared/claims/`.
 - After adding Material modules or other dependencies, restart the dev server with a clean `.angular/cache` if you see "Outdated Optimize Dep" or "mat-form-field must contain a MatFormFieldControl".
 - E2E: in Playwright use `getByLabel(text, { exact: true })` (labels match substrings by default) and wait for dialogs to focus before typing.

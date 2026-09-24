@@ -101,6 +101,13 @@
       "SCANNING": "قيد الفحص",
       "CLEAN": "جاهز",
       "REJECTED": "مرفوض"
+    },
+    "batch": {
+      "DRAFT": "مسودة",
+      "EXPORT_PENDING": "قيد التصدير",
+      "EXPORT_CREATED": "مُصدَّرة، غير مدفوعة",
+      "EXPORT_FAILED": "فشل التصدير",
+      "PAYMENT_RECORDED": "مدفوعة"
     }
   },
   "errors": {
@@ -127,7 +134,18 @@
     "TOO_MANY_RECEIPTS": "وصلت المطالبة إلى الحد الأقصى لعدد الإيصالات.",
     "UPLOAD_NOT_FOUND": "لم يكتمل رفع الملف. حاول مرة أخرى.",
     "RECEIPT_NOT_AVAILABLE": "هذا الإيصال غير متاح للعرض بعد.",
-    "NO_POLICY_IN_FORCE": "لا توجد سياسة مواصلات سارية بعد."
+    "NO_POLICY_IN_FORCE": "لا توجد سياسة مواصلات سارية بعد.",
+    "SELF_APPROVAL": "لا يمكنك اتخاذ قرار بشأن مطالبتك.",
+    "ALREADY_DECIDED": "تم اتخاذ قرار بشأن هذه المطالبة بالفعل. تعرض الصفحة حالتها الحالية.",
+    "CLAIM_ALREADY_BATCHED": "أُضيفت بعض هذه المطالبات إلى دفعة أخرى. تم تحديث القائمة.",
+    "MIXED_CURRENCIES": "يمكن أن تحتوي الدفعة على مطالبات بعملة واحدة فقط.",
+    "BATCH_NOT_EXPORTABLE": "لا يمكن تصدير هذه الدفعة الآن.",
+    "EXPORT_FORMAT_UNAVAILABLE": "صيغة التصدير هذه غير متاحة.",
+    "EXPORT_EXPIRED": "انتهت صلاحية ملف التصدير. أنشئ تصديرًا جديدًا.",
+    "PAYMENT_REQUIRES_EXPORT": "صدّر الدفعة قبل تسجيل الدفع.",
+    "PAYMENT_ALREADY_RECORDED": "تم تسجيل الدفع لهذه الدفعة بالفعل.",
+    "SETTLEMENT_EXPORT_FAILED": "فشل التصدير.",
+    "TENANT_PROVISIONING_FAILED": "فشل التجهيز."
   },
   "common": {
     "all": "الكل",
@@ -161,10 +179,14 @@
       "ABOVE_MONTHLY_LIMIT": "لا يمكن أن يتجاوز حد الرحلة الواحدة الحد الشهري.",
       "INVALID_NUMBER": "أدخل عددًا صحيحًا يساوي 0 أو أكثر.",
       "EFFECTIVE_DATE_TAKEN": "توجد نسخة منشورة أخرى تبدأ في هذا التاريخ.",
-      "EFFECTIVE_DATE_IN_PAST": "لا يمكن أن تبدأ نسخة جديدة في الماضي."
+      "EFFECTIVE_DATE_IN_PAST": "لا يمكن أن تبدأ نسخة جديدة في الماضي.",
+      "APPROVER_NOT_ACTIVE": "اختر مستخدمًا نشطًا.",
+      "TOO_LONG": "هذا النص طويل جدًا.",
+      "FUTURE_DATE": "لا يمكن أن يكون التاريخ في المستقبل."
     },
     "amount": "أدخل مبلغًا موجبًا بحد أقصى {{digits}} خانات عشرية.",
-    "min": "أدخل {{min}} أو أكثر."
+    "min": "أدخل {{min}} أو أكثر.",
+    "maxlength": "استخدم {{requiredLength}} حرفًا كحد أقصى."
   },
   "unsaved": {
     "title": "المغادرة دون حفظ؟",
@@ -488,6 +510,123 @@
         "EXPORTED": "صُدّرت للدفع",
         "SETTLED": "دُفعت"
       }
+    }
+  },
+  "routing": {
+    "title": "مسار الاعتماد",
+    "intro": "حدد من يعتمد المطالبات. لا يُطلب من أي شخص اعتماد مطالبته. تنطبق التغييرات على المطالبات المقدَّمة بعد ذلك.",
+    "firstApprover": "المعتمِد الأول",
+    "first": {
+      "LINE_MANAGER": "مدير الموظف",
+      "DEPARTMENT_MANAGER": "مدير القسم"
+    },
+    "fallback": "المعتمِد البديل",
+    "fallbackHint": "يُستخدم عندما لا يكون للموظف مدير، أو يكون هو المدير.",
+    "secondToggle": "طلب اعتماد ثانٍ فوق مبلغ معين",
+    "secondAbove": "اعتماد ثانٍ فوق",
+    "secondApprover": "المعتمِد الثاني",
+    "saved": "تم حفظ مسار الاعتماد."
+  },
+  "approvals": {
+    "title": "الموافقات",
+    "pending": "بانتظار قراري",
+    "decided": "قراراتي",
+    "empty": "لا يوجد ما ينتظر قرارك.",
+    "emptyDecided": "لم تتخذ قرارًا بشأن أي مطالبة بعد.",
+    "claimant": "الموظف",
+    "forReview": "للمراجعة",
+    "warnings": "{{count}} للتحقق",
+    "step": "المرحلة",
+    "stepOf": "{{step}} من {{total}}",
+    "submittedAt": "تاريخ التقديم",
+    "yourDecision": "قرارك",
+    "policy": "السياسة",
+    "decisionTitle": "قرارك",
+    "chooseDecision": "اختر قرارًا.",
+    "reasonRequired": "السبب (مطلوب)",
+    "reasonOptional": "تعليق (اختياري)",
+    "reasonHint": "سيرى الموظف هذا النص.",
+    "submitDecision": "إرسال القرار",
+    "noDecision": "هذه المطالبة لا تنتظر قرارك.",
+    "conflict": "اتخذ شخص آخر قرارًا بشأن هذه المطالبة أولًا. تعرض الصفحة حالتها الحالية؛ ولم يُسجَّل قرارك.",
+    "decisions": {
+      "APPROVE": "اعتماد",
+      "REJECT": "رفض",
+      "REQUEST_CHANGES": "طلب تعديلات"
+    },
+    "confirm": {
+      "APPROVE": {
+        "title": "اعتماد {{number}}؟",
+        "body": "{{name}} · {{total}}. تنتقل المطالبة إلى التسوية أو الاعتماد التالي."
+      },
+      "REJECT": {
+        "title": "رفض {{number}}؟",
+        "body": "{{name}} · {{total}}. سيرى الموظف السبب. لا يمكن التراجع عن ذلك."
+      },
+      "REQUEST_CHANGES": {
+        "title": "طلب تعديلات على {{number}}؟",
+        "body": "{{name}} · {{total}}. تعود المطالبة إلى الموظف مع السبب."
+      }
+    },
+    "done": {
+      "APPROVE": "تم اعتماد {{number}}.",
+      "REJECT": "تم رفض {{number}}.",
+      "REQUEST_CHANGES": "تم طلب تعديلات على {{number}}."
+    }
+  },
+  "finance": {
+    "title": "التسويات",
+    "queue": "جاهزة للتسوية",
+    "batches": "الدفعات",
+    "batch": "الدفعة",
+    "claims": "المطالبات في هذه الدفعة",
+    "queueEmpty": "لا توجد مطالبات معتمدة بانتظار التسوية.",
+    "batchesEmpty": "لا توجد دفعات بعد.",
+    "selected": "تم تحديد {{count}}",
+    "selectAll": "تحديد الكل في هذه الصفحة",
+    "createBatch": "إنشاء دفعة",
+    "createConfirm": {
+      "title": "إنشاء دفعة؟",
+      "body": "سيتم تجميع {{count}} مطالبات. يحسب TCMS إجمالي الدفعة."
+    },
+    "batchCreated": "تم إنشاء الدفعة {{number}}.",
+    "approvedAt": "تاريخ الاعتماد",
+    "claimCount": "المطالبات",
+    "createdAt": "تاريخ الإنشاء",
+    "recordPayment": "تسجيل الدفع",
+    "paymentRecorded": "تم تسجيل الدفع. أصبحت المطالبات مسوّاة.",
+    "paymentConfirm": {
+      "title": "تسجيل الدفع للدفعة {{number}}؟",
+      "body": "{{count}} مطالبات، {{total}}. سيتم وضع علامة مدفوعة عليها."
+    },
+    "methods": {
+      "BANK_TRANSFER": "تحويل بنكي",
+      "PAYROLL": "كشف الرواتب",
+      "CHEQUE": "شيك",
+      "CASH": "نقدًا"
+    },
+    "export": {
+      "title": "التصدير للدفع",
+      "draft": "صدّر الدفعة لإرسالها للدفع.",
+      "pending": "جارٍ إنشاء ملف التصدير…",
+      "createdNotPaid": "التصدير جاهز. لا تُعد المطالبات مدفوعة حتى تسجل الدفع أدناه.",
+      "failed": "فشل التصدير. حاول مرة أخرى.",
+      "paid": "تم تسجيل الدفع لهذه الدفعة.",
+      "csv": "تصدير CSV",
+      "again": "تصدير مرة أخرى",
+      "download": "تنزيل",
+      "id": "معرّف التصدير",
+      "expires": "متاح حتى {{date}}"
+    },
+    "payment": {
+      "title": "الدفع",
+      "intro": "سجّل الدفع بعد إرسال المبلغ. عندها فقط تصبح المطالبات مسوّاة.",
+      "needsExport": "صدّر الدفعة قبل تسجيل الدفع.",
+      "reference": "مرجع الدفع",
+      "paidOn": "تاريخ الدفع",
+      "method": "الطريقة",
+      "note": "ملاحظة",
+      "recordedBy": "سجّله"
     }
   }
 }

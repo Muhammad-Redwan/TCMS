@@ -52,10 +52,10 @@ import { ErrorAlert } from '../../shared/ui/error-alert';
 import { Notifier } from '../../shared/ui/notifier';
 import { StatusBadge } from '../../shared/ui/status-badge';
 import { TRANSPORT_MODES } from '../policies/policy-status';
-import { CLAIM_STATUS_TONES, formatPeriod } from './claim-status';
-import { ClaimFindings } from './claim-findings';
+import { CLAIM_STATUS_TONES, formatPeriod } from '../../shared/claims/claim-status';
+import { ClaimFindings } from '../../shared/claims/claim-findings';
 import { ClaimSubmitter } from './claim-submitter';
-import { ClaimTimeline } from './claim-timeline';
+import { ClaimTimeline } from '../../shared/claims/claim-timeline';
 import { ReceiptsPanel } from './receipts-panel';
 
 type ItemForm = FormGroup<{

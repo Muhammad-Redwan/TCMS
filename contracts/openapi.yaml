@@ -1,4 +1,4 @@
-# DRAFT — written by the frontend so Sprint 0–4 screens can be built against mocks.
+# DRAFT — written by the frontend so Sprint 0–6 screens can be built against mocks.
 # The backend owns the canonical spec in tcms-backend/api/ (D7). Replace this file with the
 # published backend spec as soon as it exists; do not treat anything here as backend behavior.
 #
@@ -13,7 +13,7 @@
 openapi: 3.1.0
 info:
   title: TCMS API
-  version: 0.3.0-draft
+  version: 0.4.0-draft
 servers:
   - url: /api
 tags:
@@ -26,6 +26,8 @@ tags:
   - name: users
   - name: policies
   - name: claims
+  - name: approvals
+  - name: settlements
 paths:
   /v1/me:
     get:
@@ -686,6 +688,253 @@ paths:
               schema: { $ref: '#/components/schemas/DownloadUrl' }
         default: { $ref: '#/components/responses/Problem' }
 
+  /v1/approval-route:
+    get:
+      operationId: getApprovalRoute
+      summary: Tenant approval routing (P02)
+      tags: [approvals]
+      responses:
+        '200':
+          description: Route
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApprovalRoute' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      operationId: updateApprovalRoute
+      summary: Applies to claims submitted after the change; claims in review keep their route
+      tags: [approvals]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApprovalRouteWrite' }
+      responses:
+        '200':
+          description: Updated
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApprovalRoute' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/approvals:
+    get:
+      operationId: listMyApprovals
+      summary: Claims waiting for (or already decided by) the signed-in approver
+      tags: [approvals]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - $ref: '#/components/parameters/Sort'
+        - { name: state, in: query, schema: { type: string, enum: [PENDING, DECIDED], default: PENDING } }
+      responses:
+        '200':
+          description: One page of approval tasks
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApprovalTaskPage' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/approvals/{claimId}:
+    parameters:
+      - { name: claimId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getApproval
+      summary: Claim as the approver sees it, with the findings recorded at submission
+      tags: [approvals]
+      responses:
+        '200':
+          description: Approval view
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApprovalView' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/approvals/{claimId}/decision:
+    parameters:
+      - { name: claimId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: decideApproval
+      summary: 'Approve, reject or request changes; 403 SELF_APPROVAL, 409/412 when already decided'
+      tags: [approvals]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApprovalDecision' }
+      responses:
+        '200':
+          description: Decision recorded
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApprovalView' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/approvals/{claimId}/receipts/{receiptId}/download-url:
+    parameters:
+      - { name: claimId, in: path, required: true, schema: { type: string } }
+      - { name: receiptId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getApprovalReceiptUrl
+      summary: Receipt download for the assigned approver
+      tags: [approvals]
+      responses:
+        '200':
+          description: Download URL
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DownloadUrl' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/settlements/queue:
+    get:
+      operationId: listSettlementQueue
+      summary: Approved claims not yet in a settlement batch
+      tags: [settlements]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - $ref: '#/components/parameters/Sort'
+      responses:
+        '200':
+          description: One page of approved claims
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettlementCandidatePage' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/settlements/batches:
+    get:
+      operationId: listSettlementBatches
+      tags: [settlements]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - $ref: '#/components/parameters/Sort'
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/BatchStatus' } }
+      responses:
+        '200':
+          description: One page of batches
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettlementBatchSummaryPage' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: createSettlementBatch
+      summary: 'Groups approved claims; the server computes count and total. 409 CLAIM_ALREADY_BATCHED'
+      tags: [settlements]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SettlementBatchCreate' }
+      responses:
+        '201':
+          description: Created
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettlementBatch' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/settlements/batches/{batchId}:
+    parameters:
+      - { name: batchId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getSettlementBatch
+      tags: [settlements]
+      responses:
+        '200':
+          description: Batch
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettlementBatch' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/settlements/batches/{batchId}/exports:
+    parameters:
+      - { name: batchId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: startSettlementExport
+      summary: Starts an asynchronous export job (D12). An export is not a payment.
+      tags: [settlements]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SettlementExportRequest' }
+      responses:
+        '202':
+          description: Export started
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettlementBatch' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/settlements/batches/{batchId}/exports/{exportId}/download-url:
+    parameters:
+      - { name: batchId, in: path, required: true, schema: { type: string } }
+      - { name: exportId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getSettlementExportUrl
+      summary: Short-lived download URL; 410 EXPORT_EXPIRED once the file lifecycle ends
+      tags: [settlements]
+      responses:
+        '200':
+          description: Download URL
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DownloadUrl' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/settlements/batches/{batchId}/payment:
+    parameters:
+      - { name: batchId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: recordSettlementPayment
+      summary: 'Records payment evidence; only then are the claims SETTLED. 409 unless an export exists'
+      tags: [settlements]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentEvidenceWrite' }
+      responses:
+        '200':
+          description: Payment recorded
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettlementBatch' }
+        default: { $ref: '#/components/responses/Problem' }
+
 components:
   parameters:
     Page:
@@ -1154,6 +1403,187 @@ components:
       properties:
         url: { type: string }
         expiresAt: { type: string, format: date-time }
+
+    FirstApprover:
+      type: string
+      enum: [LINE_MANAGER, DEPARTMENT_MANAGER]
+    ApprovalRouteWrite:
+      type: object
+      required: [firstApprover, fallbackApproverUserId]
+      properties:
+        firstApprover: { $ref: '#/components/schemas/FirstApprover' }
+        fallbackApproverUserId:
+          type: string
+          description: 'Used when the claimant has no manager, or the manager is the claimant'
+        secondApprovalAbove:
+          description: 'Claims with a total above this need a second approval; null disables it'
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        secondApproverUserId: { type: [string, 'null'] }
+    ApprovalRoute:
+      allOf:
+        - $ref: '#/components/schemas/ApprovalRouteWrite'
+        - type: object
+          required: [version]
+          properties:
+            fallbackApproverName: { type: [string, 'null'] }
+            secondApproverName: { type: [string, 'null'] }
+            version: { type: integer, format: int64 }
+
+    ApprovalDecisionType:
+      type: string
+      enum: [APPROVE, REJECT, REQUEST_CHANGES]
+    ApprovalDecision:
+      type: object
+      required: [decision]
+      properties:
+        decision: { $ref: '#/components/schemas/ApprovalDecisionType' }
+        reason:
+          type: [string, 'null']
+          description: Required for REJECT and REQUEST_CHANGES; shown to the claimant
+    ApprovalTask:
+      type: object
+      required: [claimId, claimNumber, claimantName, period, totalAmount, currency, status, step, totalSteps, warningCount]
+      properties:
+        claimId: { type: string }
+        claimNumber: { type: string }
+        claimantName: { type: string }
+        departmentName: { type: [string, 'null'] }
+        period: { type: string }
+        totalAmount: { $ref: '#/components/schemas/Money' }
+        currency: { type: string }
+        status: { $ref: '#/components/schemas/ClaimStatus' }
+        step: { type: integer }
+        totalSteps: { type: integer }
+        warningCount: { type: integer, description: 'Findings the reviewer should look at' }
+        submittedAt: { type: [string, 'null'], format: date-time }
+        decidedAt: { type: [string, 'null'], format: date-time }
+        decision: { oneOf: [{ $ref: '#/components/schemas/ApprovalDecisionType' }, { type: 'null' }] }
+    ApprovalTaskPage:
+      type: object
+      required: [content, page]
+      properties:
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/ApprovalTask' }
+        page: { $ref: '#/components/schemas/PageMetadata' }
+    ApprovalView:
+      type: object
+      required: [claim, claimantName, step, totalSteps, allowedDecisions]
+      properties:
+        claim: { $ref: '#/components/schemas/Claim' }
+        claimantName: { type: string }
+        departmentName: { type: [string, 'null'] }
+        step: { type: integer }
+        totalSteps: { type: integer }
+        allowedDecisions:
+          type: array
+          description: Empty when the signed-in user may not decide (already decided, not assigned, own claim)
+          items: { $ref: '#/components/schemas/ApprovalDecisionType' }
+
+    BatchStatus:
+      type: string
+      enum: [DRAFT, EXPORT_PENDING, EXPORT_CREATED, EXPORT_FAILED, PAYMENT_RECORDED]
+    SettlementCandidate:
+      type: object
+      required: [claimId, claimNumber, claimantName, period, totalAmount, currency]
+      properties:
+        claimId: { type: string }
+        claimNumber: { type: string }
+        claimantName: { type: string }
+        period: { type: string }
+        totalAmount: { $ref: '#/components/schemas/Money' }
+        currency: { type: string }
+        approvedAt: { type: [string, 'null'], format: date-time }
+    SettlementCandidatePage:
+      type: object
+      required: [content, page]
+      properties:
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/SettlementCandidate' }
+        page: { $ref: '#/components/schemas/PageMetadata' }
+    SettlementBatchCreate:
+      type: object
+      required: [claimIds]
+      properties:
+        claimIds:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items: { type: string }
+    SettlementBatchSummary:
+      type: object
+      required: [id, number, status, claimCount, totalAmount, currency, createdAt]
+      properties:
+        id: { type: string }
+        number: { type: string }
+        status: { $ref: '#/components/schemas/BatchStatus' }
+        claimCount: { type: integer }
+        totalAmount: { $ref: '#/components/schemas/Money' }
+        currency: { type: string }
+        createdAt: { type: string, format: date-time }
+    SettlementBatchSummaryPage:
+      type: object
+      required: [content, page]
+      properties:
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/SettlementBatchSummary' }
+        page: { $ref: '#/components/schemas/PageMetadata' }
+    SettlementExport:
+      type: object
+      required: [id, format, fileName, createdAt]
+      properties:
+        id: { type: string }
+        format: { type: string, enum: [CSV, XLSX] }
+        fileName: { type: string }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: [string, 'null'], format: date-time }
+    SettlementExportRequest:
+      type: object
+      required: [format]
+      properties:
+        format: { type: string, enum: [CSV, XLSX] }
+    PaymentMethod:
+      type: string
+      enum: [BANK_TRANSFER, PAYROLL, CHEQUE, CASH]
+    PaymentEvidenceWrite:
+      type: object
+      required: [reference, paidOn, method]
+      properties:
+        reference: { type: string, description: 'Bank or payroll reference' }
+        paidOn: { type: string, format: date }
+        method: { $ref: '#/components/schemas/PaymentMethod' }
+        note: { type: [string, 'null'] }
+    PaymentEvidence:
+      allOf:
+        - $ref: '#/components/schemas/PaymentEvidenceWrite'
+        - type: object
+          required: [recordedBy, recordedAt]
+          properties:
+            recordedBy: { type: string }
+            recordedAt: { type: string, format: date-time }
+    SettlementBatch:
+      allOf:
+        - $ref: '#/components/schemas/SettlementBatchSummary'
+        - type: object
+          required: [claims, exports, version]
+          properties:
+            claims:
+              type: array
+              items: { $ref: '#/components/schemas/SettlementCandidate' }
+            exports:
+              type: array
+              items: { $ref: '#/components/schemas/SettlementExport' }
+            exportJobId: { type: [string, 'null'], description: 'Running export job, if any' }
+            exportErrorCode: { type: [string, 'null'] }
+            payment:
+              oneOf:
+                - $ref: '#/components/schemas/PaymentEvidence'
+                - type: 'null'
+            version: { type: integer, format: int64 }
 
     Problem:
       type: object

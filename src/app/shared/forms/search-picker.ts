@@ -21,17 +21,24 @@ import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/for
 import { MatInput } from '@angular/material/input';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { debounceTime } from 'rxjs';
-import { Api } from '../../api/api';
-import { listEmployees } from '../../api/functions';
 import { FieldErrorText } from './field-error';
 
+export interface PickerOption {
+  id: string;
+  label: string;
+  /** Secondary text, e.g. an employee number or email. */
+  detail?: string | null;
+}
+
+/** Server-side search: large lists (employees, users) are never loaded whole. */
+export type PickerSearch = (query: string) => Promise<PickerOption[]>;
+
 /**
- * Picks one ACTIVE employee by server-side search (tenants may have thousands, so no full list).
- * Renders its own <mat-form-field>, because Material needs the input as a direct child.
- * Use with formControlName / [formControl]; the value is the employee id or null.
+ * Picks one item by server-side search. Renders its own <mat-form-field>, because Material needs
+ * the input as a direct child. Use with formControlName / [formControl]; the value is the id or null.
  */
 @Component({
-  selector: 'app-employee-picker',
+  selector: 'app-search-picker',
   imports: [
     MatFormField,
     MatLabel,
@@ -54,9 +61,11 @@ import { FieldErrorText } from './field-error';
         (input)="onType($any($event.target).value)"
         (blur)="onBlur()"
         [disabled]="disabled()"
+        [required]="required()"
         [matAutocomplete]="auto"
         [errorStateMatcher]="errorState"
         autocomplete="off"
+        dir="auto"
       />
       @if (hint()) {
         <mat-hint>{{ hint() }}</mat-hint>
@@ -69,11 +78,16 @@ import { FieldErrorText } from './field-error';
         (optionSelected)="onSelect($event)"
         [hideSingleSelectionIndicator]="true"
       >
-        <mat-option [value]="null">{{ 'common.none' | transloco }}</mat-option>
-        @for (employee of options(); track employee.id) {
-          @if (employee.id !== excludeId()) {
-            <mat-option [value]="employee">
-              <bdi>{{ employee.fullName }}</bdi> · <bdi>{{ employee.employeeNumber }}</bdi>
+        @if (!required()) {
+          <mat-option [value]="null">{{ 'common.none' | transloco }}</mat-option>
+        }
+        @for (option of options(); track option.id) {
+          @if (option.id !== excludeId()) {
+            <mat-option [value]="option">
+              <bdi>{{ option.label }}</bdi>
+              @if (option.detail) {
+                · <bdi>{{ option.detail }}</bdi>
+              }
             </mat-option>
           }
         }
@@ -89,36 +103,31 @@ import { FieldErrorText } from './field-error';
     }
   `,
 })
-export class EmployeePicker implements ControlValueAccessor {
-  private readonly api = inject(Api);
+export class SearchPicker implements ControlValueAccessor {
   protected readonly ngControl = inject(NgControl, { self: true, optional: true });
 
   readonly label = input.required<string>();
+  readonly search = input.required<PickerSearch>();
   readonly hint = input<string>();
-  /** Hide one employee from the options, e.g. the employee being edited. */
+  readonly required = input(false);
+  /** Hide one option, e.g. the record being edited. */
   readonly excludeId = input<string | null>(null);
-  /** Name for the current value, known from the loaded record; may arrive after the value. */
-  readonly initialName = input<string | null>(null);
+  /** Label for the current value, known from the loaded record; may arrive after the value. */
+  readonly initialLabel = input<string | null>(null);
 
   protected readonly text = signal('');
   protected readonly disabled = signal(false);
   private readonly selectedId = signal<string | null>(null);
-  private readonly selectedName = signal<string | null>(null);
+  private readonly selectedLabel = signal<string | null>(null);
   private readonly query = toSignal(toObservable(this.text).pipe(debounceTime(250)), {
     initialValue: '',
   });
 
   private readonly results = resource({
-    params: () => ({ q: this.query() }),
-    loader: ({ params }) =>
-      this.api.invoke(listEmployees, {
-        q: params.q || undefined,
-        status: 'ACTIVE',
-        size: 10,
-        sort: 'fullName,asc',
-      }),
+    params: () => ({ q: this.query(), search: this.search() }),
+    loader: ({ params }) => params.search(params.q),
   });
-  protected readonly options = computed(() => this.results.value()?.content ?? []);
+  protected readonly options = computed(() => this.results.value() ?? []);
 
   /** Shows the error styling from the outer form control, not the inner input. */
   protected readonly errorState: ErrorStateMatcher = {
@@ -132,11 +141,11 @@ export class EmployeePicker implements ControlValueAccessor {
   constructor() {
     if (this.ngControl) this.ngControl.valueAccessor = this;
     effect(() => {
-      const name = this.initialName();
+      const label = this.initialLabel();
       untracked(() => {
-        if (name && this.selectedId()) {
-          this.selectedName.set(name);
-          this.text.set(name);
+        if (label && this.selectedId()) {
+          this.selectedLabel.set(label);
+          this.text.set(label);
         }
       });
     });
@@ -144,9 +153,9 @@ export class EmployeePicker implements ControlValueAccessor {
 
   writeValue(value: string | null): void {
     this.selectedId.set(value);
-    const name = value ? untracked(this.initialName) : null;
-    this.selectedName.set(name);
-    this.text.set(name ?? '');
+    const label = value ? untracked(this.initialLabel) : null;
+    this.selectedLabel.set(label);
+    this.text.set(label ?? '');
   }
 
   registerOnChange(fn: (value: string | null) => void): void {
@@ -167,21 +176,21 @@ export class EmployeePicker implements ControlValueAccessor {
   }
 
   protected onSelect(event: MatAutocompleteSelectedEvent): void {
-    const employee = event.option.value as { id: string; fullName: string } | null;
-    this.commit(employee?.id ?? null, employee?.fullName ?? null);
-    this.text.set(employee?.fullName ?? '');
+    const option = event.option.value as PickerOption | null;
+    this.commit(option?.id ?? null, option?.label ?? null);
+    this.text.set(option?.label ?? '');
   }
 
   /** Typed text that was not picked from the list reverts to the current selection. */
   protected onBlur(): void {
     this.onTouched();
-    setTimeout(() => this.text.set(this.selectedName() ?? ''), 200);
+    setTimeout(() => this.text.set(this.selectedLabel() ?? ''), 200);
   }
 
-  private commit(id: string | null, name: string | null): void {
+  private commit(id: string | null, label: string | null): void {
     if (id === this.selectedId()) return;
     this.selectedId.set(id);
-    this.selectedName.set(name);
+    this.selectedLabel.set(label);
     this.onChange(id);
   }
 }

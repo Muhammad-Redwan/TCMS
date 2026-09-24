@@ -28,7 +28,8 @@ import { Employee, EmployeeCreate, EmployeeStatus } from '../../../api/models';
 import { ApiError, isApiError } from '../../../core/errors/api-error';
 import { newIdempotencyKey, versioned, Versioned } from '../../../core/http/versioned';
 import { SessionService } from '../../../core/session/session.service';
-import { EmployeePicker } from '../../../shared/forms/employee-picker';
+import { employeeSearch } from '../../../shared/forms/picker-searches';
+import { SearchPicker } from '../../../shared/forms/search-picker';
 import { FieldErrorText } from '../../../shared/forms/field-error';
 import { applyServerErrors, focusFirstInvalid } from '../../../shared/forms/server-errors';
 import { HasUnsavedChanges } from '../../../shared/forms/unsaved-changes.guard';
@@ -53,7 +54,7 @@ import { EMPLOYEE_STATUS_TONES } from './employee-status';
     MatSelect,
     MatOption,
     MatProgressBar,
-    EmployeePicker,
+    SearchPicker,
     FieldErrorText,
     ErrorAlert,
     StatusBadge,
@@ -62,6 +63,7 @@ import { EMPLOYEE_STATUS_TONES } from './employee-status';
   styleUrl: './employee-form.page.scss',
 })
 export class EmployeeFormPage implements OnInit, HasUnsavedChanges {
+  protected readonly employeeSearch = employeeSearch();
   private readonly api = inject(Api);
   private readonly router = inject(Router);
   private readonly notifier = inject(Notifier);

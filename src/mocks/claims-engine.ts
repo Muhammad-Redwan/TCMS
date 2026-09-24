@@ -1,5 +1,6 @@
 import { Claim, ClaimAction, PolicyFinding, Receipt } from '../app/api/models';
 import { currencyDigits } from '../app/shared/format/money';
+import { APPROVER_ID } from './approvals-seed';
 import { MockClaim, MockPolicy, MockReceipt } from './claims-seed';
 import { MockDb } from './db';
 
@@ -160,9 +161,22 @@ export function presentReceipt(receipt: MockReceipt): Receipt {
 
 /** What the API returns: private fields removed, server-calculated values filled in. */
 export function presentClaim(claim: MockClaim, db: MockDb): Claim {
-  const { total, findings } = evaluate(claim, db);
-  const { ownerId: _owner, receipts, ...rest } = claim;
-  void _owner;
+  const evaluation = evaluate(claim, db);
+  const total = evaluation.total;
+  // After submission the reviewer and the employee see the findings recorded at submit time.
+  const findings = editable(claim) ? evaluation.findings : (claim.submittedFindings ?? []);
+  const {
+    ownerId: _owner,
+    receipts,
+    claimantName: _name,
+    departmentName: _department,
+    approval: _approval,
+    submittedFindings: _submitted,
+    approvedAt: _approvedAt,
+    batchId: _batch,
+    ...rest
+  } = claim;
+  void [_owner, _name, _department, _approval, _submitted, _approvedAt, _batch];
   const policy = policyFor(claim.period, db.policies);
   return {
     ...rest,
@@ -174,6 +188,28 @@ export function presentClaim(claim: MockClaim, db: MockDb): Claim {
     findings,
     allowedActions: allowedActions(claim),
   };
+}
+
+/**
+ * Approvers for a claim, fixed at submission: the line manager (the Approver Demo persona in
+ * mock mode), or the fallback approver when the claimant is that manager; plus a second
+ * approver above the configured amount. Nobody is ever routed their own claim.
+ */
+export function resolveApprovers(db: MockDb, ownerId: string, total: string): string[] {
+  const route = db.approvalRoute;
+  const first = ownerId === APPROVER_ID ? route.fallbackApproverUserId : APPROVER_ID;
+  const approvers = [first];
+  const digits = currencyDigits(db.organization.currency);
+  if (
+    route.secondApprovalAbove &&
+    route.secondApproverUserId &&
+    route.secondApproverUserId !== ownerId &&
+    route.secondApproverUserId !== first &&
+    toMinor(total, digits) > toMinor(route.secondApprovalAbove, digits)
+  ) {
+    approvers.push(route.secondApproverUserId);
+  }
+  return approvers;
 }
 
 export function isEditable(claim: MockClaim): boolean {
