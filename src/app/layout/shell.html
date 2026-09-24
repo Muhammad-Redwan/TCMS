@@ -1,0 +1,63 @@
+<a class="skip-link" href="#main">{{ 'shell.skipToContent' | transloco }}</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-name">{{ 'app.name' | transloco }}</span>
+    @if (session.me(); as me) {
+      <span class="tenant" dir="auto" data-testid="tenant-name">{{ me.tenant.displayName }}</span>
+    }
+  </div>
+  <div class="actions">
+    <button
+      matButton
+      type="button"
+      [attr.aria-label]="'shell.switchLanguageLabel' | transloco"
+      (click)="switchLanguage()"
+      data-testid="switch-language"
+    >
+      <span [attr.lang]="localeService.locale() === 'ar' ? 'en' : 'ar'">{{
+        'shell.switchLanguage' | transloco
+      }}</span>
+    </button>
+    @if (session.me(); as me) {
+      <span
+        class="user"
+        dir="auto"
+        [attr.title]="'shell.signedInAs' | transloco: { name: me.displayName }"
+      >
+        {{ me.displayName }}
+      </span>
+    }
+    <button matButton="outlined" type="button" (click)="signOut()" data-testid="sign-out">
+      {{ 'shell.signOut' | transloco }}
+    </button>
+  </div>
+</header>
+
+<div class="body">
+  <nav class="sidenav" [attr.aria-label]="'shell.mainNav' | transloco">
+    <ul>
+      <li>
+        <a
+          routerLink="/"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          ariaCurrentWhenActive="page"
+        >
+          {{ 'nav.home' | transloco }}
+        </a>
+      </li>
+      @for (item of navItems(); track item.screenId) {
+        <li>
+          <a [routerLink]="'/' + item.path" routerLinkActive="active" ariaCurrentWhenActive="page">
+            {{ item.labelKey | transloco }}
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <main id="main" tabindex="-1">
+    <router-outlet />
+  </main>
+</div>

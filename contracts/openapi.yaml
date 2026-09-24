@@ -1,0 +1,103 @@
+# DRAFT — Sprint 0 bootstrap contract, written by the frontend so work can start.
+# The backend owns the canonical spec in tcms-backend/api/ (D7). Replace this file with the
+# published backend spec as soon as it exists; do not treat anything here as backend behavior.
+openapi: 3.1.0
+info:
+  title: TCMS API
+  version: 0.1.0-draft
+servers:
+  - url: /api
+paths:
+  /v1/me:
+    get:
+      operationId: getMe
+      summary: Current user, active tenant and effective permissions
+      tags: [session]
+      responses:
+        '200':
+          description: Signed-in user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+              example:
+                userId: usr_01
+                displayName: Sara Al-Mutairi
+                email: sara@example.com
+                locale: ar
+                tenant:
+                  id: ten_01
+                  displayName: Example Logistics Co.
+                  timezone: Asia/Kuwait
+                  currency: KWD
+                memberships:
+                  - id: ten_01
+                    displayName: Example Logistics Co.
+                permissions: [claims.create, claims.own.read]
+        '401':
+          $ref: '#/components/responses/Problem'
+components:
+  responses:
+    Problem:
+      description: Error (RFC 9457)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Me:
+      type: object
+      required: [userId, displayName, tenant, memberships, permissions]
+      properties:
+        userId: { type: string }
+        displayName: { type: string }
+        email: { type: string, format: email }
+        locale:
+          type: string
+          enum: [ar, en]
+        tenant:
+          $ref: '#/components/schemas/TenantContext'
+        memberships:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantMembership'
+        permissions:
+          type: array
+          items: { type: string }
+    TenantContext:
+      type: object
+      required: [id, displayName, timezone, currency]
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        timezone: { type: string, description: IANA timezone }
+        currency: { type: string, description: ISO 4217 code }
+    TenantMembership:
+      type: object
+      required: [id, displayName]
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+    Problem:
+      type: object
+      description: RFC 9457 ProblemDetail with TCMS extensions (D8)
+      required: [status, code]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        code: { type: string, description: Stable machine-readable error code }
+        traceId: { type: string }
+        fieldErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+    FieldError:
+      type: object
+      required: [field, code]
+      properties:
+        field: { type: string, description: 'Path, e.g. receipts[1].amount' }
+        code: { type: string }
+        message: { type: string }

@@ -1,0 +1,3 @@
+# Keep LF in the repo on every OS so generated code and CI diffs stay stable.
+* text=auto eol=lf
+*.ico binary

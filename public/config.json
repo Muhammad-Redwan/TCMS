@@ -1,0 +1,8 @@
+{
+  "apiBasePath": "/api",
+  "loginPath": "/oauth2/authorization/keycloak",
+  "logoutPath": "/logout",
+  "defaultLocale": "en",
+  "supportedLocales": ["en", "ar"],
+  "featureFlags": {}
+}

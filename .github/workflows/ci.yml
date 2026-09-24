@@ -1,0 +1,51 @@
+# PR gate from the frontend guide §9. CI system is still OPEN (strategy "deferred" table);
+# this GitHub Actions file is the default until the team decides.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Generated API client matches pinned contract
+        run: npm run api:check
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Dependency audit (production dependencies)
+        run: npm audit --omit=dev --audit-level=high
+
+  e2e-mocked:
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Mocked E2E smoke (not proof of backend integration)
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7

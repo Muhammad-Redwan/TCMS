@@ -1,0 +1,84 @@
+# tcms-frontend
+
+Angular frontend for **TCMS — Transportation Claim Management System**.
+
+- Scope, screens, contract rules and tests: [TCMS_FRONTEND_README.md](../TCMS_FRONTEND_README.md) (the "frontend guide")
+- Stack and architecture decisions D1–D19: [TCMS_PROJECT_STRATEGY.md](../TCMS_PROJECT_STRATEGY.md)
+
+## Stack
+
+Angular 22 (standalone, zoneless, strict TypeScript) · Angular Material 3 · Transloco (Arabic/English, RTL) · ng-openapi-gen · Vitest · Playwright · MSW · ESLint + Prettier
+
+## Getting started
+
+Requires Node 24+.
+
+```bash
+npm ci
+```
+
+```bash
+npm run start:mock
+```
+
+Open http://localhost:4200, choose **Continue to sign in**, then pick a fabricated persona. Mock mode needs no backend: [MSW](https://mswjs.io) answers `/config.json` and `/api/**` from `src/mocks/`.
+
+To run against the local backend stack (`tcms-infra` docker-compose with the gateway on port 8080):
+
+```bash
+npm run start:local
+```
+
+`proxy.local.json` forwards `/api`, `/oauth2`, `/login/oauth2` and `/logout` to the gateway so the browser stays same-origin (D16). The gateway's Keycloak client must allow `http://localhost:4200/login/oauth2/code/*` as a redirect URI.
+
+## Scripts
+
+| Script | Purpose |
+| --- | --- |
+| `start:mock` | Dev server with mocked API and personas |
+| `start:local` | Dev server proxied to the local gateway |
+| `api:generate` | Regenerate `src/app/api` from `contracts/openapi.yaml` |
+| `api:check` | Fail if the generated client is out of date (CI) |
+| `lint` / `format` / `format:check` | ESLint and Prettier |
+| `typecheck` | Strict TypeScript for app and tests |
+| `test` / `test:watch` | Vitest unit and component tests |
+| `test:e2e` | Playwright against the mock build (Chromium desktop + mobile) |
+| `build` | Production build to `dist/tcms-frontend/browser` |
+
+First-time E2E setup: `npx playwright install chromium`.
+
+## Layout
+
+```text
+contracts/openapi.yaml       pinned API contract (currently a frontend-written DRAFT; replace with backend spec)
+src/app/api/                 generated client — never edit by hand
+src/app/core/                config loader, session, guards, interceptor, errors, i18n, navigation
+src/app/layout/              app shell (A03)
+src/app/features/<feature>/  one folder per feature: routes, pages, components, adapters, tests
+src/mocks/                   MSW handlers, personas, mock sign-in (mock build only)
+public/config.json           runtime settings for local dev; replaced per environment at deploy
+public/i18n/{en,ar}.json     translations
+e2e/                         Playwright journeys
+deploy/                      nginx config and security headers for the container image
+```
+
+## How the pieces fit
+
+- **Runtime config (D17).** `main.ts` fetches `/config.json` before bootstrapping, so the same build runs in every environment. Nothing in that file may be secret.
+- **Sign-in (D5).** The SPA never handles tokens or passwords. `SessionService` calls `GET /api/v1/me`. On 401 the user goes to `/login`, which hands off to the gateway (`loginPath`), which runs OIDC with Keycloak. The requested URL is kept in `sessionStorage` (relative paths only) and restored after sign-in.
+- **HTTP.** `apiInterceptor` marks API calls as XHR, converts failures to `ApiError` from RFC 9457 `ProblemDetail` (D8), and redirects once to login on 401. Angular's built-in XSRF support sends Spring Security's `XSRF-TOKEN` cookie back as `X-XSRF-TOKEN`.
+- **Permissions.** `permissionGuard('x.y')` protects routes and `NAV_ITEMS` hides links; the backend remains the authority.
+- **Language.** `LocaleService` switches Transloco and sets `<html lang dir>`. Styles use CSS logical properties, and user-provided text is wrapped in `<bdi>` or `dir` so Latin names render correctly inside Arabic.
+- **Mocks.** The `mock` build configuration swaps `src/mocks/enable-mocks.ts` for `enable-mocks.mock.ts`, so MSW and fake data never ship in production bundles.
+
+## Deployment
+
+```bash
+docker build -t tcms-frontend .
+```
+
+The image serves the build with nginx on port 8080, with security headers from `deploy/security-headers.conf`. Mount the environment's `config.json` at `/usr/share/nginx/html/config.json`. The gateway in front routes `/api/**` and the login/logout endpoints to the backend.
+
+## Status
+
+Sprint 0 foundations. Feature screens are placeholders that name their screen ID and sprint. See the guide §9 for the sprint plan.

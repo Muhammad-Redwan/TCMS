@@ -1,0 +1,79 @@
+@use '@angular/material' as mat;
+
+/* Global base. Component styles use Angular Material system tokens (var(--mat-sys-*)) and CSS
+   logical properties (margin-inline, inset-inline-start, ...) so layouts mirror correctly in RTL.
+   Placeholder brand palette: replace with the values from the branding design decision. */
+
+html {
+  color-scheme: light;
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$cyan-palette,
+        tertiary: mat.$azure-palette,
+        theme-type: light,
+      ),
+      typography: (
+        plain-family: (
+          system-ui,
+          'Segoe UI',
+          Roboto,
+          'Noto Sans',
+          'Noto Sans Arabic',
+          Tahoma,
+          sans-serif,
+        ),
+        brand-family: (
+          system-ui,
+          'Segoe UI',
+          Roboto,
+          'Noto Sans',
+          'Noto Sans Arabic',
+          Tahoma,
+          sans-serif,
+        ),
+      ),
+      density: 0,
+    )
+  );
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Noto Sans',
+    'Noto Sans Arabic',
+    Tahoma,
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--mat-sys-on-surface);
+  background: var(--mat-sys-surface-container-low);
+}
+
+body {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

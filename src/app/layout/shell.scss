@@ -1,0 +1,137 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.skip-link {
+  position: absolute;
+  inset-inline-start: 1rem;
+  inset-block-start: -3rem;
+  padding: 0.5rem 1rem;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  z-index: 10;
+
+  &:focus {
+    inset-block-start: 0.5rem;
+  }
+}
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-block-end: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.brand-name {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--mat-sys-primary);
+}
+
+.tenant {
+  color: var(--mat-sys-on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.body {
+  flex: 1;
+  display: flex;
+}
+
+.sidenav {
+  flex: 0 0 14rem;
+  padding: 1rem 0.5rem;
+  border-inline-end: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface);
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  a {
+    display: block;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--mat-sys-corner-medium);
+    color: var(--mat-sys-on-surface);
+    text-decoration: none;
+
+    &:hover {
+      background: var(--mat-sys-surface-container-high);
+    }
+
+    &.active {
+      background: var(--mat-sys-secondary-container);
+      color: var(--mat-sys-on-secondary-container);
+      font-weight: 600;
+    }
+  }
+}
+
+main {
+  flex: 1;
+  min-width: 0;
+  padding: 1.5rem;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .body {
+    flex-direction: column;
+  }
+
+  .sidenav {
+    flex-basis: auto;
+    padding: 0.5rem;
+    border-inline-end: none;
+    border-block-end: 1px solid var(--mat-sys-outline-variant);
+    overflow-x: auto;
+
+    ul {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    a {
+      white-space: nowrap;
+    }
+  }
+
+  main {
+    padding: 1rem;
+  }
+
+  .user {
+    display: none;
+  }
+}

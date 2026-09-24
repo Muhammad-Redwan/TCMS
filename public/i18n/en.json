@@ -1,0 +1,71 @@
+{
+  "app": {
+    "name": "TCMS",
+    "fullName": "Transportation Claim Management"
+  },
+  "shell": {
+    "skipToContent": "Skip to main content",
+    "mainNav": "Main navigation",
+    "switchLanguage": "العربية",
+    "switchLanguageLabel": "Switch to Arabic",
+    "signOut": "Sign out",
+    "signedInAs": "Signed in as {{name}}"
+  },
+  "nav": {
+    "home": "Home",
+    "tenants": "Tenants",
+    "organization": "Organization",
+    "employees": "Employees",
+    "users": "Users & roles",
+    "policies": "Policies",
+    "claims": "My claims",
+    "approvals": "Approvals",
+    "settlements": "Settlements"
+  },
+  "login": {
+    "title": "Sign in to TCMS",
+    "body": "You will continue to your organization's secure sign-in page.",
+    "action": "Continue to sign in"
+  },
+  "home": {
+    "welcome": "Welcome, {{name}}",
+    "tenant": "Organization",
+    "timezone": "Time zone",
+    "currency": "Currency",
+    "permissions": "Your access"
+  },
+  "planned": {
+    "title": "{{screen}} — coming soon",
+    "body": "This screen is planned for sprint {{sprint}}. See the frontend guide for its scope."
+  },
+  "status": {
+    "forbidden": {
+      "title": "Access denied",
+      "body": "Your account does not have permission to open this page. Ask your administrator if you need access."
+    },
+    "notFound": {
+      "title": "Page not found",
+      "body": "The page does not exist or is not available to your account."
+    },
+    "error": {
+      "title": "Something went wrong",
+      "body": "TCMS could not load. Try again in a moment."
+    },
+    "goHome": "Go to home",
+    "retry": "Try again"
+  },
+  "errors": {
+    "NETWORK_ERROR": "Cannot reach TCMS. Check your connection and try again.",
+    "UNAUTHENTICATED": "Your session has ended. Please sign in again.",
+    "FORBIDDEN": "You do not have permission to do this.",
+    "NOT_FOUND": "This item was not found.",
+    "CONFLICT": "This item was changed by someone else. It has been refreshed; review it and try again.",
+    "PAYLOAD_TOO_LARGE": "The file is too large.",
+    "UNSUPPORTED_MEDIA_TYPE": "This file type is not supported.",
+    "RATE_LIMITED": "Too many requests. Wait a moment and try again.",
+    "VALIDATION_FAILED": "Please review the highlighted fields.",
+    "SERVER_ERROR": "TCMS had a problem completing this request.",
+    "UNKNOWN_ERROR": "Something went wrong.",
+    "traceId": "Support reference: {{traceId}}"
+  }
+}
