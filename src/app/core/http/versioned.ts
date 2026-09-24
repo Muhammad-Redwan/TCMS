@@ -17,10 +17,15 @@ export function etagFromVersion(version: number): string {
   return `W/"${version}"`;
 }
 
-export function versioned<T extends { version?: number }>(
+/**
+ * Pairs a response body with its ETag. `revisionOf` names the body field behind the ETag,
+ * for resources whose `version` means something else (a policy's user-facing version number).
+ */
+export function versioned<T extends object>(
   response: StrictHttpResponse<T>,
+  revisionOf: (body: T) => number = (body) => (body as { version?: number }).version ?? 0,
 ): Versioned<T> {
-  const etag = response.headers.get('ETag') ?? etagFromVersion(response.body.version ?? 0);
+  const etag = response.headers.get('ETag') ?? etagFromVersion(revisionOf(response.body));
   return { data: response.body, etag };
 }
 

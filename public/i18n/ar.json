@@ -80,6 +80,27 @@
       "DONE": "مكتمل",
       "PENDING": "مطلوب",
       "NOT_AVAILABLE": "لاحقًا"
+    },
+    "policy": {
+      "DRAFT": "مسودة",
+      "PUBLISHED": "منشورة",
+      "RETIRED": "متوقفة"
+    },
+    "claim": {
+      "DRAFT": "مسودة",
+      "SUBMITTED": "مقدَّمة",
+      "NEEDS_CHANGES": "تحتاج تعديلات",
+      "UNDER_REVIEW": "قيد المراجعة",
+      "APPROVED": "معتمدة",
+      "REJECTED": "مرفوضة",
+      "READY_FOR_SETTLEMENT": "جاهزة للتسوية",
+      "SETTLED": "مسوّاة"
+    },
+    "scan": {
+      "AWAITING_UPLOAD": "لم يكتمل الرفع",
+      "SCANNING": "قيد الفحص",
+      "CLEAN": "جاهز",
+      "REJECTED": "مرفوض"
     }
   },
   "errors": {
@@ -99,7 +120,14 @@
     "outcomeUnknown": "النتيجة غير مؤكدة. تحقق مما إذا كان التغيير قد حُفظ قبل المحاولة مرة أخرى.",
     "PRECONDITION_REQUIRED": "يتطلب هذا التغيير أحدث نسخة. أعد تحميل الصفحة وحاول مرة أخرى.",
     "IDEMPOTENCY_KEY_REQUIRED": "حدث خطأ ما.",
-    "PROVISIONING_FAILED": "فشل التجهيز."
+    "PROVISIONING_FAILED": "فشل التجهيز.",
+    "POLICY_NOT_EDITABLE": "هذه النسخة من السياسة منشورة ولا يمكن تعديلها.",
+    "CLAIM_NOT_EDITABLE": "لم يعد بالإمكان تعديل هذه المطالبة.",
+    "CLAIM_HAS_BLOCKING_FINDINGS": "لا يمكن تقديم المطالبة بعد. عالج البنود المانعة.",
+    "TOO_MANY_RECEIPTS": "وصلت المطالبة إلى الحد الأقصى لعدد الإيصالات.",
+    "UPLOAD_NOT_FOUND": "لم يكتمل رفع الملف. حاول مرة أخرى.",
+    "RECEIPT_NOT_AVAILABLE": "هذا الإيصال غير متاح للعرض بعد.",
+    "NO_POLICY_IN_FORCE": "لا توجد سياسة مواصلات سارية بعد."
   },
   "common": {
     "all": "الكل",
@@ -127,8 +155,16 @@
       "INVALID_TIMEZONE": "اختر منطقة زمنية مدعومة.",
       "INVALID_CURRENCY": "اختر عملة مدعومة.",
       "UNKNOWN_ROLE": "أحد الأدوار غير متاح.",
-      "LAST_ADMIN": "يجب أن تحتفظ الشركة بمسؤول شركة واحد على الأقل."
-    }
+      "LAST_ADMIN": "يجب أن تحتفظ الشركة بمسؤول شركة واحد على الأقل.",
+      "INVALID_AMOUNT": "أدخل مبلغًا موجبًا صحيحًا.",
+      "TOO_MANY_DECIMALS": "عدد الخانات العشرية أكثر من المسموح لهذه العملة.",
+      "ABOVE_MONTHLY_LIMIT": "لا يمكن أن يتجاوز حد الرحلة الواحدة الحد الشهري.",
+      "INVALID_NUMBER": "أدخل عددًا صحيحًا يساوي 0 أو أكثر.",
+      "EFFECTIVE_DATE_TAKEN": "توجد نسخة منشورة أخرى تبدأ في هذا التاريخ.",
+      "EFFECTIVE_DATE_IN_PAST": "لا يمكن أن تبدأ نسخة جديدة في الماضي."
+    },
+    "amount": "أدخل مبلغًا موجبًا بحد أقصى {{digits}} خانات عشرية.",
+    "min": "أدخل {{min}} أو أكثر."
   },
   "unsaved": {
     "title": "المغادرة دون حفظ؟",
@@ -280,6 +316,177 @@
       "POLICY": {
         "title": "سياسة المواصلات",
         "body": "متاح في إصدار لاحق."
+      }
+    }
+  },
+  "modes": {
+    "TAXI": "سيارة أجرة",
+    "RIDE_HAILING": "تطبيق توصيل",
+    "BUS": "حافلة",
+    "METRO": "مترو",
+    "PERSONAL_CAR": "سيارة خاصة",
+    "OTHER": "أخرى"
+  },
+  "policies": {
+    "title": "السياسات",
+    "intro": "تنطبق كل نسخة منشورة على الرحلات في تاريخ بدئها أو بعده. لا يمكن تعديل النسخ المنشورة؛ أنشئ نسخة جديدة بدلًا من ذلك.",
+    "create": "سياسة جديدة",
+    "newTitle": "سياسة جديدة",
+    "empty": "لا توجد سياسات بعد.",
+    "versionLabel": "النسخة {{version}}",
+    "saveDraft": "حفظ المسودة",
+    "saved": "تم حفظ مسودة السياسة.",
+    "publish": "نشر",
+    "published": "تم نشر السياسة.",
+    "saveBeforePublish": "احفظ تغييراتك قبل النشر.",
+    "newVersion": "إنشاء نسخة جديدة",
+    "immutable": "نُشرت في {{date}}. هذه النسخة مقفلة؛ أنشئ نسخة جديدة لتغيير القواعد.",
+    "allDepartments": "جميع الأقسام",
+    "publishConfirm": {
+      "title": "نشر النسخة {{version}}؟",
+      "body": "ستنطبق على الرحلات اعتبارًا من {{date}} ولا يمكن تعديلها بعد ذلك."
+    },
+    "fields": {
+      "name": "الاسم",
+      "version": "النسخة",
+      "status": "الحالة",
+      "effectiveFrom": "تسري اعتبارًا من",
+      "currency": "العملة",
+      "monthlyLimit": "الحد الشهري",
+      "perTripLimit": "حد الرحلة الواحدة",
+      "receiptRequiredAbove": "يلزم إيصال فوق",
+      "submissionDeadlineDays": "مهلة التقديم (أيام بعد نهاية الشهر)",
+      "eligibleDepartments": "الأقسام المشمولة",
+      "allowedModes": "وسائل النقل المسموحة"
+    },
+    "hints": {
+      "effectiveFrom": "الرحلات في هذا اليوم أو بعده تستخدم هذه النسخة.",
+      "perTripLimit": "الرحلات التي تتجاوزه تُعلَّم للمراجع.",
+      "receiptRequiredAbove": "الرحلات التي تتجاوز هذا المبلغ تحتاج إلى إيصال.",
+      "submissionDeadlineDays": "يجب تقديم مطالبات الشهر خلال هذا العدد من الأيام بعد انتهائه.",
+      "eligibleDepartments": "اتركه فارغًا ليشمل الجميع."
+    }
+  },
+  "claims": {
+    "title": "مطالباتي",
+    "create": "مطالبة جديدة",
+    "newTitle": "مطالبة جديدة",
+    "empty": "ليست لديك مطالبات بعد.",
+    "emptyFiltered": "لا توجد مطالبات تطابق عامل التصفية.",
+    "saveDraft": "حفظ المسودة",
+    "saved": "تم حفظ المسودة.",
+    "submit": "تقديم المطالبة",
+    "submitted": "تم تقديم المطالبة.",
+    "delete": "حذف المسودة",
+    "deleted": "تم حذف المسودة.",
+    "saveToAttach": "احفظ المسودة لإرفاق الإيصالات.",
+    "saveToRecalculate": "احفظ لإعادة حساب الإجمالي والتحقق.",
+    "totalByServer": "محسوب بواسطة TCMS.",
+    "noPolicy": "لا توجد سياسة مواصلات سارية بعد، لذا لا يمكن تقديم المطالبات.",
+    "reviewerNote": "تعديلات مطلوبة من {{name}}:",
+    "submitConfirm": {
+      "title": "تقديم المطالبة {{number}}؟",
+      "body": "الإجمالي {{total}}. لا يمكنك تعديل المطالبة أثناء مراجعتها."
+    },
+    "deleteConfirm": {
+      "title": "حذف المسودة {{number}}؟",
+      "body": "ستُحذف المسودة وإيصالاتها. لا يمكن التراجع عن ذلك."
+    },
+    "submitHint": {
+      "unsaved": "احفظ تغييراتك قبل التقديم.",
+      "scanning": "لا يزال فحص الإيصالات جاريًا. يمكنك التقديم عندما تصبح جاهزة.",
+      "blocking": "عالج البنود المانعة أدناه قبل التقديم."
+    },
+    "policySummary": {
+      "title": "{{name}} (النسخة {{version}})",
+      "perTrip": "لكل رحلة:",
+      "monthly": "شهريًا:",
+      "receiptAbove": "إيصال فوق:"
+    },
+    "fields": {
+      "number": "المطالبة",
+      "period": "الشهر",
+      "trips": "الرحلات",
+      "total": "الإجمالي",
+      "status": "الحالة",
+      "updatedAt": "آخر تحديث"
+    },
+    "trips": {
+      "title": "الرحلات",
+      "line": "الرحلة {{line}}",
+      "date": "التاريخ",
+      "mode": "وسيلة النقل",
+      "from": "من",
+      "to": "إلى",
+      "purpose": "الغرض",
+      "amount": "المبلغ",
+      "receipt": "الإيصال",
+      "add": "إضافة رحلة",
+      "remove": "حذف الرحلة",
+      "empty": "أضف رحلة واحدة على الأقل."
+    },
+    "findings": {
+      "title": "التحقق من السياسة",
+      "line": "الرحلة {{line}}:",
+      "severity": {
+        "BLOCKING": "يجب إصلاحه",
+        "WARNING": "للمراجعة",
+        "INFO": "ملاحظة"
+      },
+      "codes": {
+        "NO_POLICY_IN_FORCE": "لا توجد سياسة مواصلات تغطي هذا الشهر.",
+        "NO_ITEMS": "أضف رحلة واحدة على الأقل.",
+        "FUTURE_DATE": "تاريخ الرحلة في المستقبل.",
+        "DATE_OUTSIDE_PERIOD": "تاريخ الرحلة خارج شهر المطالبة.",
+        "MODE_NOT_ALLOWED": "وسيلة النقل هذه غير مشمولة بالسياسة.",
+        "PER_TRIP_LIMIT_EXCEEDED": "يتجاوز حد الرحلة البالغ {{limit}}؛ سيقرر المراجع.",
+        "RECEIPT_REQUIRED": "يلزم إيصال للرحلات التي تتجاوز {{threshold}}.",
+        "RECEIPT_NOT_READY": "الإيصال المرفق غير جاهز بعد.",
+        "POSSIBLE_DUPLICATE_RECEIPT": "يبدو {{fileName}} مطابقًا لإيصال في {{claimNumber}}. سيتحقق المراجع منه.",
+        "MONTHLY_LIMIT_EXCEEDED": "الإجمالي يتجاوز الحد الشهري البالغ {{limit}}؛ سيقرر المراجع.",
+        "SUBMISSION_DEADLINE_PASSED": "كانت المهلة لهذا الشهر {{deadline}}."
+      }
+    },
+    "receipts": {
+      "title": "الإيصالات",
+      "drop": "أفلت ملفات الإيصالات هنا، أو",
+      "choose": "اختيار ملفات",
+      "empty": "لا توجد إيصالات مرفقة.",
+      "limits": "JPEG أو PNG أو WebP أو PDF، بحد أقصى {{size}} ميغابايت لكل ملف، و{{count}} لكل مطالبة.",
+      "remove": "إزالة",
+      "removeConfirm": {
+        "title": "إزالة {{fileName}}؟",
+        "body": "لن يكون للرحلات التي تستخدم هذا الإيصال إيصال بعد الآن."
+      },
+      "storageFailed": "لم يكتمل الرفع. حاول مرة أخرى.",
+      "precheck": {
+        "UNSUPPORTED_MEDIA_TYPE": "لم يُرفق: نوع الملف غير مقبول.",
+        "PAYLOAD_TOO_LARGE": "لم يُرفق: حجم الملف كبير جدًا.",
+        "TOO_MANY_RECEIPTS": "لم يُرفق: وصلت المطالبة إلى الحد الأقصى لعدد الإيصالات."
+      },
+      "rejection": {
+        "MALWARE_DETECTED": "مرفوض: لم يجتز الملف الفحص الأمني.",
+        "CONTENT_TYPE_MISMATCH": "مرفوض: محتوى الملف لا يطابق نوعه."
+      },
+      "duplicate": "الملف نفسه موجود كإيصال في {{claimNumber}}؛ سيتحقق المراجع منه.",
+      "backToClaim": "العودة إلى المطالبة",
+      "type": "النوع",
+      "size": "الحجم",
+      "uploadedAt": "تاريخ الرفع",
+      "open": "فتح الملف",
+      "scanningHint": "جارٍ فحص الملف. يمكن عرضه عندما يصبح جاهزًا."
+    },
+    "timeline": {
+      "title": "السجل",
+      "types": {
+        "CREATED": "أُنشئت",
+        "SUBMITTED": "قُدّمت",
+        "CHANGES_REQUESTED": "طُلبت تعديلات",
+        "RESUBMITTED": "أُعيد تقديمها",
+        "APPROVED": "اعتُمدت",
+        "REJECTED": "رُفضت",
+        "EXPORTED": "صُدّرت للدفع",
+        "SETTLED": "دُفعت"
       }
     }
   }

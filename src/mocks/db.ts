@@ -1,4 +1,6 @@
 import { Department, Employee, Job, Organization, Role, Tenant, User } from '../app/api/models';
+import { MockClaim, MockPolicy, seedClaims, seedPolicies } from './claims-seed';
+import { clearFiles } from './file-store';
 
 /**
  * In-browser fake backend state for mock mode. All names and identifiers are fabricated.
@@ -12,6 +14,8 @@ export interface MockDb {
   /** Jobs store their start time so status advances with the clock. */
   jobs: (Job & { startedAt: number; fails: boolean; tenantId?: string })[];
   users: User[];
+  policies: MockPolicy[];
+  claims: MockClaim[];
   idempotency: Record<string, { status: number; body: unknown }>;
   seq: number;
 }
@@ -31,6 +35,8 @@ export const ROLES: Role[] = [
       'users.read',
       'users.write',
       'roles.manage',
+      'policies.read',
+      'policies.write',
     ],
   },
 ];
@@ -175,6 +181,8 @@ function seed(): MockDb {
     tenants,
     jobs: [],
     users,
+    policies: seedPolicies(),
+    claims: seedClaims(),
     idempotency: {},
     seq: 1000,
   };
@@ -230,6 +238,9 @@ export function db(): MockDb {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     cache = stored ? (JSON.parse(stored) as MockDb) : seed();
+    // Data saved by an older mock version: add the collections introduced since.
+    cache.policies ??= seedPolicies();
+    cache.claims ??= seedClaims();
   } catch {
     cache = seed();
   }
@@ -258,6 +269,7 @@ function readRevision(): string | null {
 }
 
 export function resetDb(): void {
+  clearFiles();
   cache = seed();
   save();
 }

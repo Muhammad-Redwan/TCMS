@@ -41,6 +41,8 @@ export const PERSONAS: Record<string, Me> = {
     'users.write',
     'roles.manage',
     'employees.read',
+    'policies.read',
+    'policies.write',
   ]),
   platform: persona('usr_platform', 'Platform Operator Demo', [
     'platform.tenants.read',

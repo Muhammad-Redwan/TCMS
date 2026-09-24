@@ -80,6 +80,27 @@
       "DONE": "Done",
       "PENDING": "To do",
       "NOT_AVAILABLE": "Coming later"
+    },
+    "policy": {
+      "DRAFT": "Draft",
+      "PUBLISHED": "Published",
+      "RETIRED": "Retired"
+    },
+    "claim": {
+      "DRAFT": "Draft",
+      "SUBMITTED": "Submitted",
+      "NEEDS_CHANGES": "Needs changes",
+      "UNDER_REVIEW": "Under review",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "READY_FOR_SETTLEMENT": "Ready for settlement",
+      "SETTLED": "Settled"
+    },
+    "scan": {
+      "AWAITING_UPLOAD": "Upload not finished",
+      "SCANNING": "Scanning",
+      "CLEAN": "Ready",
+      "REJECTED": "Rejected"
     }
   },
   "errors": {
@@ -99,7 +120,14 @@
     "outcomeUnknown": "The result is not certain. Check whether the change was saved before trying again.",
     "PRECONDITION_REQUIRED": "This change needs the latest version. Reload the page and try again.",
     "IDEMPOTENCY_KEY_REQUIRED": "Something went wrong.",
-    "PROVISIONING_FAILED": "Provisioning failed."
+    "PROVISIONING_FAILED": "Provisioning failed.",
+    "POLICY_NOT_EDITABLE": "This policy version is published and can no longer be changed.",
+    "CLAIM_NOT_EDITABLE": "This claim can no longer be changed.",
+    "CLAIM_HAS_BLOCKING_FINDINGS": "The claim cannot be submitted yet. Fix the items marked as blocking.",
+    "TOO_MANY_RECEIPTS": "This claim already has the maximum number of receipts.",
+    "UPLOAD_NOT_FOUND": "The file did not finish uploading. Try again.",
+    "RECEIPT_NOT_AVAILABLE": "This receipt is not available to view yet.",
+    "NO_POLICY_IN_FORCE": "No transportation policy is in force yet."
   },
   "common": {
     "all": "All",
@@ -127,8 +155,16 @@
       "INVALID_TIMEZONE": "Choose a supported time zone.",
       "INVALID_CURRENCY": "Choose a supported currency.",
       "UNKNOWN_ROLE": "One of the roles is not available.",
-      "LAST_ADMIN": "The company must keep at least one company admin."
-    }
+      "LAST_ADMIN": "The company must keep at least one company admin.",
+      "INVALID_AMOUNT": "Enter a valid positive amount.",
+      "TOO_MANY_DECIMALS": "Too many decimal places for this currency.",
+      "ABOVE_MONTHLY_LIMIT": "The per-trip limit cannot be higher than the monthly limit.",
+      "INVALID_NUMBER": "Enter a whole number of 0 or more.",
+      "EFFECTIVE_DATE_TAKEN": "Another published version already starts on this date.",
+      "EFFECTIVE_DATE_IN_PAST": "A new version cannot start in the past."
+    },
+    "amount": "Enter a positive amount with at most {{digits}} decimal places.",
+    "min": "Enter {{min}} or more."
   },
   "unsaved": {
     "title": "Leave without saving?",
@@ -280,6 +316,177 @@
       "POLICY": {
         "title": "Transportation policy",
         "body": "Available in a later release."
+      }
+    }
+  },
+  "modes": {
+    "TAXI": "Taxi",
+    "RIDE_HAILING": "Ride-hailing app",
+    "BUS": "Bus",
+    "METRO": "Metro",
+    "PERSONAL_CAR": "Personal car",
+    "OTHER": "Other"
+  },
+  "policies": {
+    "title": "Policies",
+    "intro": "Each published version applies to trips on or after its start date. Published versions cannot be changed; create a new version instead.",
+    "create": "New policy",
+    "newTitle": "New policy",
+    "empty": "No policies yet.",
+    "versionLabel": "Version {{version}}",
+    "saveDraft": "Save draft",
+    "saved": "Policy draft saved.",
+    "publish": "Publish",
+    "published": "Policy published.",
+    "saveBeforePublish": "Save your changes before publishing.",
+    "newVersion": "Create new version",
+    "immutable": "Published {{date}}. This version is locked; create a new version to change the rules.",
+    "allDepartments": "All departments",
+    "publishConfirm": {
+      "title": "Publish version {{version}}?",
+      "body": "It will apply to trips from {{date}} and cannot be edited afterwards."
+    },
+    "fields": {
+      "name": "Name",
+      "version": "Version",
+      "status": "Status",
+      "effectiveFrom": "Applies from",
+      "currency": "Currency",
+      "monthlyLimit": "Monthly limit",
+      "perTripLimit": "Per-trip limit",
+      "receiptRequiredAbove": "Receipt required above",
+      "submissionDeadlineDays": "Submission deadline (days after month end)",
+      "eligibleDepartments": "Eligible departments",
+      "allowedModes": "Allowed transport"
+    },
+    "hints": {
+      "effectiveFrom": "Trips on or after this day use this version.",
+      "perTripLimit": "Trips above this are flagged for the reviewer.",
+      "receiptRequiredAbove": "Trips above this amount need a receipt.",
+      "submissionDeadlineDays": "Claims for a month must be submitted within this many days after it ends.",
+      "eligibleDepartments": "Leave empty to include everyone."
+    }
+  },
+  "claims": {
+    "title": "My claims",
+    "create": "New claim",
+    "newTitle": "New claim",
+    "empty": "You have no claims yet.",
+    "emptyFiltered": "No claims match this filter.",
+    "saveDraft": "Save draft",
+    "saved": "Draft saved.",
+    "submit": "Submit claim",
+    "submitted": "Claim submitted.",
+    "delete": "Discard draft",
+    "deleted": "Draft discarded.",
+    "saveToAttach": "Save the draft to attach receipts.",
+    "saveToRecalculate": "Save to recalculate the total and checks.",
+    "totalByServer": "Calculated by TCMS.",
+    "noPolicy": "No transportation policy is in force yet, so claims cannot be submitted.",
+    "reviewerNote": "Changes requested by {{name}}:",
+    "submitConfirm": {
+      "title": "Submit claim {{number}}?",
+      "body": "Total {{total}}. You cannot change the claim while it is being reviewed."
+    },
+    "deleteConfirm": {
+      "title": "Discard draft {{number}}?",
+      "body": "The draft and its receipts will be removed. This cannot be undone."
+    },
+    "submitHint": {
+      "unsaved": "Save your changes before submitting.",
+      "scanning": "Receipts are still being checked. You can submit when they are ready.",
+      "blocking": "Fix the blocking items below before submitting."
+    },
+    "policySummary": {
+      "title": "{{name}} (version {{version}})",
+      "perTrip": "Per trip:",
+      "monthly": "Monthly:",
+      "receiptAbove": "Receipt above:"
+    },
+    "fields": {
+      "number": "Claim",
+      "period": "Month",
+      "trips": "Trips",
+      "total": "Total",
+      "status": "Status",
+      "updatedAt": "Last updated"
+    },
+    "trips": {
+      "title": "Trips",
+      "line": "Trip {{line}}",
+      "date": "Date",
+      "mode": "Transport",
+      "from": "From",
+      "to": "To",
+      "purpose": "Purpose",
+      "amount": "Amount",
+      "receipt": "Receipt",
+      "add": "Add trip",
+      "remove": "Remove trip",
+      "empty": "Add at least one trip."
+    },
+    "findings": {
+      "title": "Policy checks",
+      "line": "Trip {{line}}:",
+      "severity": {
+        "BLOCKING": "Must fix",
+        "WARNING": "For review",
+        "INFO": "Note"
+      },
+      "codes": {
+        "NO_POLICY_IN_FORCE": "No transportation policy covers this month.",
+        "NO_ITEMS": "Add at least one trip.",
+        "FUTURE_DATE": "The trip date is in the future.",
+        "DATE_OUTSIDE_PERIOD": "The trip date is outside the claim month.",
+        "MODE_NOT_ALLOWED": "This type of transport is not covered by the policy.",
+        "PER_TRIP_LIMIT_EXCEEDED": "Above the per-trip limit of {{limit}}; the reviewer will decide.",
+        "RECEIPT_REQUIRED": "A receipt is required for trips above {{threshold}}.",
+        "RECEIPT_NOT_READY": "The attached receipt is not ready yet.",
+        "POSSIBLE_DUPLICATE_RECEIPT": "{{fileName}} looks the same as a receipt on {{claimNumber}}. The reviewer will check it.",
+        "MONTHLY_LIMIT_EXCEEDED": "The total is above the monthly limit of {{limit}}; the reviewer will decide.",
+        "SUBMISSION_DEADLINE_PASSED": "The deadline for this month was {{deadline}}."
+      }
+    },
+    "receipts": {
+      "title": "Receipts",
+      "drop": "Drop receipt files here, or",
+      "choose": "Choose files",
+      "empty": "No receipts attached.",
+      "limits": "JPEG, PNG, WebP or PDF, up to {{size}} MB each, {{count}} per claim.",
+      "remove": "Remove",
+      "removeConfirm": {
+        "title": "Remove {{fileName}}?",
+        "body": "Trips using this receipt will no longer have one."
+      },
+      "storageFailed": "The upload did not complete. Try again.",
+      "precheck": {
+        "UNSUPPORTED_MEDIA_TYPE": "Not attached: this file type is not accepted.",
+        "PAYLOAD_TOO_LARGE": "Not attached: the file is too large.",
+        "TOO_MANY_RECEIPTS": "Not attached: the claim already has the maximum number of receipts."
+      },
+      "rejection": {
+        "MALWARE_DETECTED": "Rejected: the file failed the security scan.",
+        "CONTENT_TYPE_MISMATCH": "Rejected: the file content does not match its type."
+      },
+      "duplicate": "Same file as a receipt on {{claimNumber}}; the reviewer will check it.",
+      "backToClaim": "Back to claim",
+      "type": "Type",
+      "size": "Size",
+      "uploadedAt": "Uploaded",
+      "open": "Open file",
+      "scanningHint": "The file is being checked. It can be viewed once it is ready."
+    },
+    "timeline": {
+      "title": "History",
+      "types": {
+        "CREATED": "Created",
+        "SUBMITTED": "Submitted",
+        "CHANGES_REQUESTED": "Changes requested",
+        "RESUBMITTED": "Resubmitted",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "EXPORTED": "Exported for payment",
+        "SETTLED": "Paid"
       }
     }
   }

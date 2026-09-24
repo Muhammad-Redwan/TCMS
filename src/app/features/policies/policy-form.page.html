@@ -1,0 +1,230 @@
+<nav class="breadcrumb">
+  <a routerLink="/policies">{{ 'policies.title' | transloco }}</a>
+</nav>
+
+@if (isNew()) {
+  <h1>{{ 'policies.newTitle' | transloco }}</h1>
+} @else if (loaded.value(); as record) {
+  <header class="page-header">
+    <h1>
+      <bdi>{{ record.data.name }}</bdi>
+      <span class="version">{{
+        'policies.versionLabel' | transloco: { version: record.data.version }
+      }}</span>
+    </h1>
+    <app-status-badge
+      namespace="status.policy"
+      [value]="record.data.status"
+      [tones]="tones"
+      data-testid="policy-status"
+    />
+  </header>
+  @if (record.data.status === 'PUBLISHED') {
+    <p class="notice" data-testid="policy-immutable">
+      {{ 'policies.immutable' | transloco: { date: (record.data.publishedAt | tenantDate) } }}
+    </p>
+  }
+}
+
+@if (loaded.isLoading()) {
+  <mat-progress-bar mode="indeterminate" [attr.aria-label]="'common.loading' | transloco" />
+}
+
+@if (loaded.error(); as error) {
+  <app-error-alert [error]="error" [retryable]="true" (retry)="loaded.reload()" />
+} @else if (isNew() || loaded.hasValue()) {
+  @if (actionError(); as error) {
+    @if (conflict()) {
+      <div class="conflict" role="alert" data-testid="conflict">
+        <p>{{ 'errors.CONFLICT' | transloco }}</p>
+        <button matButton="outlined" type="button" (click)="reloadLatest()">
+          {{ 'common.reloadLatest' | transloco }}
+        </button>
+      </div>
+    } @else if (error.fieldErrors.length === 0) {
+      <app-error-alert [error]="error" />
+    }
+  }
+
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate class="form-grid">
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'policies.fields.name' | transloco }}</mat-label>
+      <input matInput formControlName="name" required dir="auto" data-testid="policy-name" />
+      <mat-error
+        ><app-field-error [control]="form.controls.name" [errors]="form.controls.name.errors"
+      /></mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'policies.fields.effectiveFrom' | transloco }}</mat-label>
+      <input
+        matInput
+        type="date"
+        formControlName="effectiveFrom"
+        required
+        data-testid="policy-effective-from"
+      />
+      <mat-hint>{{ 'policies.hints.effectiveFrom' | transloco }}</mat-hint>
+      <mat-error
+        ><app-field-error
+          [control]="form.controls.effectiveFrom"
+          [errors]="form.controls.effectiveFrom.errors"
+      /></mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'policies.fields.currency' | transloco }}</mat-label>
+      <mat-select formControlName="currency" required>
+        @for (c of currencies; track c) {
+          <mat-option [value]="c">{{ c }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'policies.fields.monthlyLimit' | transloco }}</mat-label>
+      <input
+        matInput
+        formControlName="monthlyLimit"
+        required
+        [appAmountInput]="currency()"
+        data-testid="policy-monthly-limit"
+      />
+      <span matTextSuffix>&nbsp;{{ currency() }}</span>
+      <mat-error
+        ><app-field-error
+          [control]="form.controls.monthlyLimit"
+          [errors]="form.controls.monthlyLimit.errors"
+      /></mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'policies.fields.perTripLimit' | transloco }}</mat-label>
+      <input
+        matInput
+        formControlName="perTripLimit"
+        required
+        [appAmountInput]="currency()"
+        data-testid="policy-per-trip-limit"
+      />
+      <span matTextSuffix>&nbsp;{{ currency() }}</span>
+      <mat-hint>{{ 'policies.hints.perTripLimit' | transloco }}</mat-hint>
+      <mat-error
+        ><app-field-error
+          [control]="form.controls.perTripLimit"
+          [errors]="form.controls.perTripLimit.errors"
+      /></mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'policies.fields.receiptRequiredAbove' | transloco }}</mat-label>
+      <input
+        matInput
+        formControlName="receiptRequiredAbove"
+        required
+        [appAmountInput]="currency()"
+        data-testid="policy-receipt-above"
+      />
+      <span matTextSuffix>&nbsp;{{ currency() }}</span>
+      <mat-hint>{{ 'policies.hints.receiptRequiredAbove' | transloco }}</mat-hint>
+      <mat-error
+        ><app-field-error
+          [control]="form.controls.receiptRequiredAbove"
+          [errors]="form.controls.receiptRequiredAbove.errors"
+      /></mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'policies.fields.submissionDeadlineDays' | transloco }}</mat-label>
+      <input
+        matInput
+        type="number"
+        min="0"
+        step="1"
+        formControlName="submissionDeadlineDays"
+        required
+        dir="ltr"
+      />
+      <mat-hint>{{ 'policies.hints.submissionDeadlineDays' | transloco }}</mat-hint>
+      <mat-error
+        ><app-field-error
+          [control]="form.controls.submissionDeadlineDays"
+          [errors]="form.controls.submissionDeadlineDays.errors"
+      /></mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'policies.fields.eligibleDepartments' | transloco }}</mat-label>
+      <mat-select
+        formControlName="eligibleDepartmentIds"
+        multiple
+        [placeholder]="'policies.allDepartments' | transloco"
+      >
+        @for (d of departments.value(); track d.id) {
+          <mat-option [value]="d.id"
+            ><bdi>{{ d.name }}</bdi></mat-option
+          >
+        }
+      </mat-select>
+      <mat-hint>{{ 'policies.hints.eligibleDepartments' | transloco }}</mat-hint>
+    </mat-form-field>
+
+    <fieldset
+      class="full-width modes"
+      [attr.aria-invalid]="form.controls.allowedModes.invalid && form.controls.allowedModes.touched"
+    >
+      <legend>{{ 'policies.fields.allowedModes' | transloco }}</legend>
+      @for (mode of modes; track mode) {
+        <mat-checkbox
+          [checked]="isModeSelected(mode)"
+          [disabled]="!editable()"
+          (change)="toggleMode(mode, $event.checked)"
+          [attr.data-testid]="'mode-' + mode"
+        >
+          {{ 'modes.' + mode | transloco }}
+        </mat-checkbox>
+      }
+      @if (form.controls.allowedModes.invalid && form.controls.allowedModes.touched) {
+        <p class="field-error" role="alert">
+          <app-field-error
+            [control]="form.controls.allowedModes"
+            [errors]="form.controls.allowedModes.errors"
+          />
+        </p>
+      }
+    </fieldset>
+
+    <div class="actions">
+      @if (editable()) {
+        <button matButton="filled" type="submit" [disabled]="busy()" data-testid="save-policy">
+          {{ 'policies.saveDraft' | transloco }}
+        </button>
+        @if (!isNew()) {
+          <button
+            matButton="outlined"
+            type="button"
+            [disabled]="busy() || form.dirty"
+            (click)="publish()"
+            data-testid="publish-policy"
+          >
+            {{ 'policies.publish' | transloco }}
+          </button>
+          @if (form.dirty) {
+            <span class="hint">{{ 'policies.saveBeforePublish' | transloco }}</span>
+          }
+        }
+      }
+      @if (canCreateVersion()) {
+        <button
+          matButton="filled"
+          type="button"
+          [disabled]="busy()"
+          (click)="createVersion()"
+          data-testid="new-version"
+        >
+          {{ 'policies.newVersion' | transloco }}
+        </button>
+      }
+    </div>
+  </form>
+}

@@ -11,6 +11,8 @@ const FEATURES: Record<string, LoadChildren> = {
     import('./features/organization/organization.routes').then((m) => m.ORGANIZATION_ROUTES),
   H01: () => import('./features/hr/employees/employees.routes').then((m) => m.EMPLOYEE_ROUTES),
   I01: () => import('./features/identity/identity.routes').then((m) => m.IDENTITY_ROUTES),
+  P01: () => import('./features/policies/policies.routes').then((m) => m.POLICY_ROUTES),
+  C01: () => import('./features/claims/claims.routes').then((m) => m.CLAIM_ROUTES),
 };
 
 /** Every nav item gets its permission guard; undelivered screens show a placeholder. */

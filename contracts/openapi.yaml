@@ -1,4 +1,4 @@
-# DRAFT — written by the frontend so Sprint 0/1 screens can be built against mocks.
+# DRAFT — written by the frontend so Sprint 0–4 screens can be built against mocks.
 # The backend owns the canonical spec in tcms-backend/api/ (D7). Replace this file with the
 # published backend spec as soon as it exists; do not treat anything here as backend behavior.
 #
@@ -7,11 +7,13 @@
 #   response { content: [...], page: { size, number, totalElements, totalPages } }.
 # - Single-resource GET returns an ETag; updates send If-Match and answer 412 when stale.
 # - Creates accept an Idempotency-Key header; a replay returns the original result.
+# - Money is a decimal string plus currency, never a JSON number; totals are server-calculated.
+# - Dates without time (tripDate, effectiveFrom) are calendar days: YYYY-MM-DD, no time zone.
 # - Errors are RFC 9457 ProblemDetail with code, traceId, fieldErrors (D8).
 openapi: 3.1.0
 info:
   title: TCMS API
-  version: 0.2.0-draft
+  version: 0.3.0-draft
 servers:
   - url: /api
 tags:
@@ -22,6 +24,8 @@ tags:
   - name: tenants
   - name: jobs
   - name: users
+  - name: policies
+  - name: claims
 paths:
   /v1/me:
     get:
@@ -362,6 +366,326 @@ paths:
                 items: { $ref: '#/components/schemas/Role' }
         default: { $ref: '#/components/responses/Problem' }
 
+  /v1/policies:
+    get:
+      operationId: listPolicies
+      summary: All policy versions of the tenant, newest first (small list, not paged)
+      tags: [policies]
+      responses:
+        '200':
+          description: Policies
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PolicySummary' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: createPolicy
+      summary: Creates a DRAFT policy
+      tags: [policies]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PolicyWrite' }
+      responses:
+        '201':
+          description: Created
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Policy' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/policies/current:
+    get:
+      operationId: getCurrentPolicy
+      summary: Policy in force today for the signed-in employee (claim screens)
+      tags: [policies]
+      responses:
+        '200':
+          description: Current policy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Policy' }
+        '404':
+          description: No published policy is in force yet
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/policies/{policyId}:
+    parameters:
+      - { name: policyId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getPolicy
+      tags: [policies]
+      responses:
+        '200':
+          description: Policy
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Policy' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      operationId: updatePolicy
+      summary: Replaces a DRAFT policy; published versions are immutable (409)
+      tags: [policies]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PolicyWrite' }
+      responses:
+        '200':
+          description: Updated
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Policy' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/policies/{policyId}/publish:
+    parameters:
+      - { name: policyId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: publishPolicy
+      summary: Publishes a DRAFT; it applies to claims whose trips fall on or after effectiveFrom
+      tags: [policies]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          description: Published
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Policy' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/policies/{policyId}/new-version:
+    parameters:
+      - { name: policyId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: createPolicyVersion
+      summary: Copies a published policy into a new DRAFT version
+      tags: [policies]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: Draft created
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Policy' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/claims:
+    get:
+      operationId: listMyClaims
+      summary: Claims owned by the signed-in employee
+      tags: [claims]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - $ref: '#/components/parameters/Sort'
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/ClaimStatus' } }
+        - { name: period, in: query, description: 'YYYY-MM', schema: { type: string } }
+      responses:
+        '200':
+          description: One page of claims
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClaimSummaryPage' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: createClaim
+      summary: Creates a DRAFT claim owned by the signed-in employee
+      tags: [claims]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClaimWrite' }
+      responses:
+        '201':
+          description: Created
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Claim' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/claims/upload-policy:
+    get:
+      operationId: getReceiptUploadPolicy
+      summary: Receipt limits the UI checks before uploading (the backend re-checks)
+      tags: [claims]
+      responses:
+        '200':
+          description: Limits
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReceiptUploadPolicy' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/claims/{claimId}:
+    parameters:
+      - { name: claimId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getClaim
+      tags: [claims]
+      responses:
+        '200':
+          description: Claim with server-calculated total, findings and allowed actions
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Claim' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      operationId: updateClaim
+      summary: Replaces period and items; allowed only when allowedActions contains EDIT
+      tags: [claims]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClaimWrite' }
+      responses:
+        '200':
+          description: Updated
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Claim' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      operationId: deleteClaim
+      summary: Discards a DRAFT; allowed only when allowedActions contains DELETE
+      tags: [claims]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204': { description: Deleted }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/claims/{claimId}/submit:
+    parameters:
+      - { name: claimId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: submitClaim
+      summary: Final recalculation and transition to SUBMITTED; 422 CLAIM_HAS_BLOCKING_FINDINGS otherwise
+      tags: [claims]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Submitted
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Claim' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/claims/{claimId}/receipts/upload-url:
+    parameters:
+      - { name: claimId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: createReceiptUpload
+      summary: Reserves a receipt and returns a short-lived presigned upload URL (D11)
+      tags: [claims]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReceiptUploadRequest' }
+      responses:
+        '201':
+          description: Upload slot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReceiptUploadSlot' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/claims/{claimId}/receipts/{receiptId}:
+    parameters:
+      - { name: claimId, in: path, required: true, schema: { type: string } }
+      - { name: receiptId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getReceipt
+      tags: [claims]
+      responses:
+        '200':
+          description: Receipt with scan status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Receipt' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      operationId: deleteReceipt
+      summary: Removes a receipt from an editable claim
+      tags: [claims]
+      responses:
+        '204': { description: Deleted }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/claims/{claimId}/receipts/{receiptId}/complete:
+    parameters:
+      - { name: claimId, in: path, required: true, schema: { type: string } }
+      - { name: receiptId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: completeReceiptUpload
+      summary: Confirms the upload finished; the backend then scans the file
+      tags: [claims]
+      responses:
+        '200':
+          description: Receipt (usually SCANNING)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Receipt' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/claims/{claimId}/receipts/{receiptId}/download-url:
+    parameters:
+      - { name: claimId, in: path, required: true, schema: { type: string } }
+      - { name: receiptId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getReceiptDownloadUrl
+      summary: Short-lived presigned URL, issued only for CLEAN receipts the caller may see
+      tags: [claims]
+      responses:
+        '200':
+          description: Download URL
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DownloadUrl' }
+        default: { $ref: '#/components/responses/Problem' }
+
 components:
   parameters:
     Page:
@@ -627,6 +951,209 @@ components:
         roles:
           type: array
           items: { type: string }
+
+    Money:
+      type: string
+      description: 'Decimal amount as a string, never a JSON number (e.g. "12.500" for KWD)'
+      pattern: '^-?\d+(\.\d+)?$'
+
+    TransportMode:
+      type: string
+      enum: [TAXI, RIDE_HAILING, BUS, METRO, PERSONAL_CAR, OTHER]
+
+    PolicyStatus:
+      type: string
+      enum: [DRAFT, PUBLISHED, RETIRED]
+    PolicySummary:
+      type: object
+      required: [id, name, status, version, effectiveFrom]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        status: { $ref: '#/components/schemas/PolicyStatus' }
+        version: { type: integer, format: int64, description: 'Policy version number shown to users' }
+        effectiveFrom: { type: string, format: date }
+    PolicyWrite:
+      type: object
+      required: [name, effectiveFrom, currency, monthlyLimit, perTripLimit, receiptRequiredAbove, allowedModes, submissionDeadlineDays]
+      properties:
+        name: { type: string }
+        effectiveFrom: { type: string, format: date, description: 'Applies to trips on or after this calendar day' }
+        currency: { type: string }
+        monthlyLimit: { $ref: '#/components/schemas/Money' }
+        perTripLimit: { $ref: '#/components/schemas/Money' }
+        receiptRequiredAbove: { $ref: '#/components/schemas/Money' }
+        allowedModes:
+          type: array
+          items: { $ref: '#/components/schemas/TransportMode' }
+        eligibleDepartmentIds:
+          type: array
+          description: Empty means every department
+          items: { type: string }
+        submissionDeadlineDays: { type: integer, description: 'Days after the claim month ends' }
+    Policy:
+      allOf:
+        - $ref: '#/components/schemas/PolicyWrite'
+        - type: object
+          required: [id, status, version, rev]
+          properties:
+            id: { type: string }
+            status: { $ref: '#/components/schemas/PolicyStatus' }
+            version: { type: integer, format: int64, description: 'Policy version number shown to users' }
+            rev: { type: integer, format: int64, description: 'Concurrency revision behind the ETag' }
+            publishedAt: { type: [string, 'null'], format: date-time }
+
+    ClaimStatus:
+      type: string
+      enum: [DRAFT, SUBMITTED, NEEDS_CHANGES, UNDER_REVIEW, APPROVED, REJECTED, READY_FOR_SETTLEMENT, SETTLED]
+    ClaimAction:
+      type: string
+      enum: [EDIT, SUBMIT, DELETE]
+    ClaimItemWrite:
+      type: object
+      required: [tripDate, mode, fromLocation, toLocation, amount]
+      properties:
+        tripDate: { type: string, format: date, description: 'Calendar day of the trip; no time zone' }
+        mode: { $ref: '#/components/schemas/TransportMode' }
+        fromLocation: { type: string }
+        toLocation: { type: string }
+        purpose: { type: [string, 'null'] }
+        amount: { $ref: '#/components/schemas/Money' }
+        receiptId: { type: [string, 'null'] }
+    ClaimItem:
+      allOf:
+        - $ref: '#/components/schemas/ClaimItemWrite'
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string }
+    ClaimWrite:
+      type: object
+      required: [period, items]
+      properties:
+        period: { type: string, description: 'Claim month, YYYY-MM' }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ClaimItemWrite' }
+    PolicyFinding:
+      type: object
+      required: [code, severity]
+      properties:
+        code: { type: string, description: 'Stable code; UI text comes from translations' }
+        severity: { type: string, enum: [INFO, WARNING, BLOCKING] }
+        itemIndex: { type: [integer, 'null'], description: 'Line the finding refers to, if any' }
+        params:
+          type: object
+          additionalProperties: { type: string }
+    TimelineEvent:
+      type: object
+      required: [at, type]
+      properties:
+        at: { type: string, format: date-time }
+        type: { type: string, enum: [CREATED, SUBMITTED, CHANGES_REQUESTED, RESUBMITTED, APPROVED, REJECTED, EXPORTED, SETTLED] }
+        actorName: { type: [string, 'null'] }
+        note: { type: [string, 'null'] }
+    Claim:
+      type: object
+      required: [id, number, status, period, currency, totalAmount, items, receipts, findings, allowedActions, timeline, updatedAt, version]
+      properties:
+        id: { type: string }
+        number: { type: string, description: 'Human reference, e.g. CLM-2026-0042' }
+        status: { $ref: '#/components/schemas/ClaimStatus' }
+        period: { type: string }
+        currency: { type: string }
+        totalAmount: { $ref: '#/components/schemas/Money' }
+        policyId: { type: [string, 'null'] }
+        policyVersion: { type: [integer, 'null'] }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ClaimItem' }
+        receipts:
+          type: array
+          items: { $ref: '#/components/schemas/Receipt' }
+        findings:
+          type: array
+          items: { $ref: '#/components/schemas/PolicyFinding' }
+        allowedActions:
+          type: array
+          items: { $ref: '#/components/schemas/ClaimAction' }
+        timeline:
+          type: array
+          items: { $ref: '#/components/schemas/TimelineEvent' }
+        submittedAt: { type: [string, 'null'], format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, format: int64 }
+    ClaimSummary:
+      type: object
+      required: [id, number, status, period, currency, totalAmount, itemCount, updatedAt]
+      properties:
+        id: { type: string }
+        number: { type: string }
+        status: { $ref: '#/components/schemas/ClaimStatus' }
+        period: { type: string }
+        currency: { type: string }
+        totalAmount: { $ref: '#/components/schemas/Money' }
+        itemCount: { type: integer }
+        submittedAt: { type: [string, 'null'], format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ClaimSummaryPage:
+      type: object
+      required: [content, page]
+      properties:
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/ClaimSummary' }
+        page: { $ref: '#/components/schemas/PageMetadata' }
+
+    ScanStatus:
+      type: string
+      enum: [AWAITING_UPLOAD, SCANNING, CLEAN, REJECTED]
+    Receipt:
+      type: object
+      required: [id, fileName, contentType, sizeBytes, scanStatus, uploadedAt]
+      properties:
+        id: { type: string }
+        fileName: { type: string }
+        contentType: { type: string }
+        sizeBytes: { type: integer, format: int64 }
+        scanStatus: { $ref: '#/components/schemas/ScanStatus' }
+        rejectionCode: { type: [string, 'null'], description: 'e.g. MALWARE_DETECTED, CONTENT_TYPE_MISMATCH' }
+        duplicateOfClaimNumber: { type: [string, 'null'], description: 'Same file already on another claim; for review, never auto-removed' }
+        uploadedAt: { type: string, format: date-time }
+    ReceiptUploadPolicy:
+      type: object
+      required: [maxFileSizeBytes, allowedContentTypes, maxReceiptsPerClaim]
+      properties:
+        maxFileSizeBytes: { type: integer, format: int64 }
+        allowedContentTypes:
+          type: array
+          items: { type: string }
+        maxReceiptsPerClaim: { type: integer }
+    ReceiptUploadRequest:
+      type: object
+      required: [fileName, contentType, sizeBytes]
+      properties:
+        fileName: { type: string }
+        contentType: { type: string }
+        sizeBytes: { type: integer, format: int64 }
+    ReceiptUploadSlot:
+      type: object
+      required: [receiptId, uploadUrl, method, headers, expiresAt]
+      properties:
+        receiptId: { type: string }
+        uploadUrl: { type: string, description: 'Presigned object-storage URL' }
+        method: { type: string, enum: [PUT] }
+        headers:
+          type: object
+          description: Headers the upload must send exactly (e.g. Content-Type)
+          additionalProperties: { type: string }
+        expiresAt: { type: string, format: date-time }
+    DownloadUrl:
+      type: object
+      required: [url, expiresAt]
+      properties:
+        url: { type: string }
+        expiresAt: { type: string, format: date-time }
 
     Problem:
       type: object

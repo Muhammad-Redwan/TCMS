@@ -50,7 +50,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     screenId: 'P01',
     path: 'policies',
     labelKey: 'nav.policies',
-    permission: 'org.settings.read',
+    permission: 'policies.read',
     sprint: 3,
   },
   {

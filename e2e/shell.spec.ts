@@ -5,7 +5,7 @@ test('anonymous user is sent to sign-in and returns to the requested page', asyn
   await signInAs(page, 'employee', '/claims');
 
   await expect(page).toHaveURL(/\/claims$/);
-  await expect(page.getByTestId('screen-C01')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'My claims' })).toBeVisible();
   await expect(page.getByTestId('tenant-name')).toHaveText('Demo Logistics Co.');
 });
 

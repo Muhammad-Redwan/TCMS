@@ -25,6 +25,16 @@ export function formatTenantDate(
   }).format(date);
 }
 
+/** Today as YYYY-MM-DD in the given time zone (the tenant's calendar day, not the browser's). */
+export function todayInTimeZone(timeZone: string, now = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
+}
+
 @Pipe({ name: 'tenantDate', pure: false })
 export class TenantDatePipe implements PipeTransform {
   private readonly session = inject(SessionService);

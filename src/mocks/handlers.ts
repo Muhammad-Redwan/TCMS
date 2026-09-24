@@ -1,7 +1,9 @@
 import { http, HttpResponse } from 'msw';
 import { AppConfig } from '../app/core/config/app-config';
+import { claimHandlers } from './api/claims';
 import { employeeHandlers } from './api/employees';
 import { organizationHandlers } from './api/organization';
+import { policyHandlers } from './api/policies';
 import { tenantHandlers } from './api/tenants';
 import { userHandlers } from './api/users';
 import { currentPersona, problem } from './http-helpers';
@@ -37,6 +39,8 @@ export const handlers = [
   ...employeeHandlers,
   ...tenantHandlers,
   ...userHandlers,
+  ...policyHandlers,
+  ...claimHandlers,
 
   // Any API route not mocked yet answers like a real missing endpoint would.
   http.all('/api/*', () => problem(404, 'NOT_FOUND')),

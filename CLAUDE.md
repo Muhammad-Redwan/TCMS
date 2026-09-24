@@ -84,4 +84,8 @@ These come from the frontend guide (`../TCMS_FRONTEND_README.md`) and strategy (
 - Dates: `tenantDate` pipe (tenant time zone, date-only values never shifted).
 - Pickers over large lists (employees) search the server, like `EmployeePicker`; never load a full list into a select.
 - Every new endpoint gets an MSW handler in `src/mocks/api/` that behaves like the contract: permissions (403), validation (422 + fieldErrors), If-Match (412), Idempotency-Key replay.
+- Money: amounts are decimal strings; show with the `money` pipe / `formatMoney`, edit with `appAmountInput` + `amountValidator(currency)`. Never parse amounts to `number` or add them up client-side.
+- Receipts: `ReceiptUploader` (reserve slot → XHR PUT to the presigned URL → complete); pre-check with `precheck()` and never show a refused file as attached; poll while `SCANNING`.
+- Claim screens render only `allowedActions` from the server; submit goes through `ClaimSubmitter` (idempotency key kept only when the outcome is unknown).
+- After adding Material modules or other dependencies, restart the dev server with a clean `.angular/cache` if you see "Outdated Optimize Dep" or "mat-form-field must contain a MatFormFieldControl".
 - E2E: in Playwright use `getByLabel(text, { exact: true })` (labels match substrings by default) and wait for dialogs to focus before typing.

@@ -1,0 +1,285 @@
+<nav class="breadcrumb">
+  <a routerLink="/claims">{{ 'claims.title' | transloco }}</a>
+</nav>
+
+@if (isNew()) {
+  <h1>{{ 'claims.newTitle' | transloco }}</h1>
+} @else if (claim.value(); as record) {
+  <header class="page-header">
+    <h1>
+      <bdi>{{ record.data.number }}</bdi> · {{ period(record.data.period) }}
+    </h1>
+    <app-status-badge
+      namespace="status.claim"
+      [value]="record.data.status"
+      [tones]="tones"
+      data-testid="claim-status"
+    />
+  </header>
+}
+
+@if (reviewerNote(); as note) {
+  <div class="reviewer-note" role="status" data-testid="reviewer-note">
+    <p class="label">{{ 'claims.reviewerNote' | transloco: { name: note.actorName ?? '' } }}</p>
+    <p dir="auto">{{ note.note }}</p>
+  </div>
+}
+
+@if (policy.error(); as error) {
+  <p class="no-policy" role="status" data-testid="no-policy">{{ 'claims.noPolicy' | transloco }}</p>
+} @else if (policy.value(); as p) {
+  @if (editable()) {
+    <aside class="policy" data-testid="policy-summary">
+      <span>{{
+        'claims.policySummary.title' | transloco: { name: p.name, version: p.version }
+      }}</span>
+      <span
+        >{{ 'claims.policySummary.perTrip' | transloco }}
+        <bdi>{{ p.perTripLimit | money: p.currency }}</bdi></span
+      >
+      <span
+        >{{ 'claims.policySummary.monthly' | transloco }}
+        <bdi>{{ p.monthlyLimit | money: p.currency }}</bdi></span
+      >
+      <span
+        >{{ 'claims.policySummary.receiptAbove' | transloco }}
+        <bdi>{{ p.receiptRequiredAbove | money: p.currency }}</bdi></span
+      >
+    </aside>
+  }
+}
+
+@if (claim.isLoading() && !claim.hasValue()) {
+  <mat-progress-bar mode="indeterminate" [attr.aria-label]="'common.loading' | transloco" />
+}
+
+@if (claim.error(); as error) {
+  <app-error-alert [error]="error" [retryable]="true" (retry)="claim.reload()" />
+} @else if (isNew() || claim.hasValue()) {
+  @if (actionError(); as error) {
+    @if (conflict()) {
+      <div class="conflict" role="alert" data-testid="conflict">
+        <p>{{ 'errors.CONFLICT' | transloco }}</p>
+        <button matButton="outlined" type="button" (click)="reloadLatest()">
+          {{ 'common.reloadLatest' | transloco }}
+        </button>
+      </div>
+    } @else if (error.fieldErrors.length === 0) {
+      <app-error-alert [error]="error" />
+    }
+  }
+
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <mat-form-field class="period">
+      <mat-label>{{ 'claims.fields.period' | transloco }}</mat-label>
+      <mat-select formControlName="period" required data-testid="claim-period">
+        @for (p of periods(); track p) {
+          <mat-option [value]="p">{{ period(p) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <h2>{{ 'claims.trips.title' | transloco }}</h2>
+    <ol class="trips" formArrayName="items">
+      @for (row of items.controls; track row; let i = $index) {
+        <li [formGroupName]="i" class="trip" [attr.data-testid]="'trip-' + i">
+          <h3 class="trip-heading">{{ 'claims.trips.line' | transloco: { line: i + 1 } }}</h3>
+
+          <mat-form-field>
+            <mat-label>{{ 'claims.trips.date' | transloco }}</mat-label>
+            <input
+              matInput
+              type="date"
+              formControlName="tripDate"
+              required
+              [attr.data-testid]="'trip-date-' + i"
+            />
+            <mat-error
+              ><app-field-error
+                [control]="row.controls.tripDate"
+                [errors]="row.controls.tripDate.errors"
+            /></mat-error>
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>{{ 'claims.trips.mode' | transloco }}</mat-label>
+            <mat-select formControlName="mode" required>
+              @for (mode of modes; track mode) {
+                <mat-option [value]="mode">{{ 'modes.' + mode | transloco }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>{{ 'claims.trips.from' | transloco }}</mat-label>
+            <input
+              matInput
+              formControlName="fromLocation"
+              required
+              dir="auto"
+              [attr.data-testid]="'trip-from-' + i"
+            />
+            <mat-error
+              ><app-field-error
+                [control]="row.controls.fromLocation"
+                [errors]="row.controls.fromLocation.errors"
+            /></mat-error>
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>{{ 'claims.trips.to' | transloco }}</mat-label>
+            <input
+              matInput
+              formControlName="toLocation"
+              required
+              dir="auto"
+              [attr.data-testid]="'trip-to-' + i"
+            />
+            <mat-error
+              ><app-field-error
+                [control]="row.controls.toLocation"
+                [errors]="row.controls.toLocation.errors"
+            /></mat-error>
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>{{ 'claims.trips.purpose' | transloco }}</mat-label>
+            <input matInput formControlName="purpose" dir="auto" />
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>{{ 'claims.trips.amount' | transloco }}</mat-label>
+            <input
+              matInput
+              formControlName="amount"
+              required
+              [appAmountInput]="currency()"
+              [attr.data-testid]="'trip-amount-' + i"
+            />
+            <span matTextSuffix>&nbsp;{{ currency() }}</span>
+            <mat-error
+              ><app-field-error
+                [control]="row.controls.amount"
+                [errors]="row.controls.amount.errors"
+            /></mat-error>
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>{{ 'claims.trips.receipt' | transloco }}</mat-label>
+            <mat-select formControlName="receiptId" [attr.data-testid]="'trip-receipt-' + i">
+              <mat-option value="">{{ 'common.none' | transloco }}</mat-option>
+              @for (receipt of claim.value()?.data?.receipts ?? []; track receipt.id) {
+                @if (
+                  receipt.scanStatus !== 'REJECTED' || row.controls.receiptId.value === receipt.id
+                ) {
+                  <mat-option [value]="receipt.id"
+                    ><bdi>{{ receipt.fileName }}</bdi></mat-option
+                  >
+                }
+              }
+            </mat-select>
+            <mat-error
+              ><app-field-error
+                [control]="row.controls.receiptId"
+                [errors]="row.controls.receiptId.errors"
+            /></mat-error>
+          </mat-form-field>
+
+          @if (editable()) {
+            <button
+              matButton
+              type="button"
+              class="remove"
+              (click)="removeItem(i)"
+              [attr.aria-label]="('claims.trips.remove' | transloco) + ' ' + (i + 1)"
+            >
+              {{ 'claims.trips.remove' | transloco }}
+            </button>
+          }
+        </li>
+      }
+    </ol>
+    @if (items.length === 0) {
+      <p class="muted">{{ 'claims.trips.empty' | transloco }}</p>
+    }
+    @if (editable()) {
+      <button matButton="outlined" type="button" (click)="addItem()" data-testid="add-trip">
+        {{ 'claims.trips.add' | transloco }}
+      </button>
+    }
+
+    @if (claim.value(); as record) {
+      <div class="total" data-testid="claim-total">
+        <span>{{ 'claims.fields.total' | transloco }}</span>
+        <strong
+          ><bdi>{{ record.data.totalAmount | money: record.data.currency }}</bdi></strong
+        >
+        @if (dirty()) {
+          <span class="muted">{{ 'claims.saveToRecalculate' | transloco }}</span>
+        } @else {
+          <span class="muted">{{ 'claims.totalByServer' | transloco }}</span>
+        }
+      </div>
+      @if (!dirty()) {
+        <app-claim-findings [findings]="record.data.findings" [currency]="record.data.currency" />
+      }
+    }
+
+    @if (editable()) {
+      <div class="actions">
+        <button matButton="outlined" type="submit" [disabled]="busy()" data-testid="save-claim">
+          {{ 'claims.saveDraft' | transloco }}
+        </button>
+        @if (claim.value()?.data?.allowedActions?.includes('SUBMIT')) {
+          <button
+            matButton="filled"
+            type="button"
+            [disabled]="busy() || dirty() || hasBlocking() || receiptsBusy()"
+            (click)="submit()"
+            data-testid="submit-claim"
+          >
+            {{ 'claims.submit' | transloco }}
+          </button>
+        }
+        @if (canDelete()) {
+          <button
+            matButton
+            type="button"
+            class="danger"
+            [disabled]="busy()"
+            (click)="discard()"
+            data-testid="delete-claim"
+          >
+            {{ 'claims.delete' | transloco }}
+          </button>
+        }
+      </div>
+      @if (!isNew()) {
+        <p class="muted submit-hint" data-testid="submit-hint">
+          @if (dirty()) {
+            {{ 'claims.submitHint.unsaved' | transloco }}
+          } @else if (receiptsBusy()) {
+            {{ 'claims.submitHint.scanning' | transloco }}
+          } @else if (hasBlocking()) {
+            {{ 'claims.submitHint.blocking' | transloco }}
+          }
+        </p>
+      } @else {
+        <p class="muted">{{ 'claims.saveToAttach' | transloco }}</p>
+      }
+    }
+  </form>
+
+  @if (claim.value(); as record) {
+    @if (uploadPolicy.value(); as limits) {
+      <app-receipts-panel
+        [claimId]="record.data.id"
+        [receipts]="record.data.receipts"
+        [policy]="limits"
+        [editable]="editable()"
+        (changed)="onReceiptsChanged()"
+      />
+    }
+    <app-claim-timeline [events]="record.data.timeline" />
+  }
+}
