@@ -5,7 +5,8 @@
     "packageManager": "npm",
     "schematicCollections": [
       "angular-eslint"
-    ]
+    ],
+    "analytics": "9c8d3981-a251-432a-a4c0-f250d2a8863c"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -85,6 +86,35 @@
                   "with": "src/mocks/enable-mocks.mock.ts"
                 }
               ]
+            },
+            "demo": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": true
+              },
+              "extractLicenses": false,
+              "sourceMap": false,
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "public"
+                },
+                {
+                  "glob": "mockServiceWorker.js",
+                  "input": "src/mocks/public"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "src/mocks/enable-mocks.ts",
+                  "with": "src/mocks/enable-mocks.mock.ts"
+                }
+              ],
+              "outputHashing": "all"
             }
           },
           "defaultConfiguration": "production"

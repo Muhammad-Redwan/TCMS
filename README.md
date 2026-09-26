@@ -44,6 +44,7 @@ npm run start:local
 | `test` / `test:watch` | Vitest unit and component tests |
 | `test:e2e` | Playwright against the mock build (Chromium desktop + mobile) |
 | `build` | Production build to `dist/tcms-frontend/browser` |
+| `build:demo` | Optimized mock-mode build for the shareable demo (add `--base-href /<path>/` for a sub-path) |
 
 First-time E2E setup: `npx playwright install chromium`.
 
@@ -64,7 +65,7 @@ deploy/                      nginx config and security headers for the container
 
 ## How the pieces fit
 
-- **Runtime config (D17).** `main.ts` fetches `/config.json` before bootstrapping, so the same build runs in every environment. Nothing in that file may be secret.
+- **Runtime config (D17).** `main.ts` fetches `config.json` (relative to `<base href>`) before bootstrapping, so the same build runs in every environment. Nothing in that file may be secret.
 - **Sign-in (D5).** The SPA never handles tokens or passwords. `SessionService` calls `GET /api/v1/me`. On 401 the user goes to `/login`, which hands off to the gateway (`loginPath`), which runs OIDC with Keycloak. The requested URL is kept in `sessionStorage` (relative paths only) and restored after sign-in.
 - **HTTP.** `apiInterceptor` marks API calls as XHR, converts failures to `ApiError` from RFC 9457 `ProblemDetail` (D8), and redirects once to login on 401. Angular's built-in XSRF support sends Spring Security's `XSRF-TOKEN` cookie back as `X-XSRF-TOKEN`.
 - **Permissions.** `permissionGuard('x.y')` protects routes and `NAV_ITEMS` hides links; the backend remains the authority.
@@ -78,6 +79,14 @@ docker build -t tcms-frontend .
 ```
 
 The image serves the build with nginx on port 8080, with security headers from `deploy/security-headers.conf`. Mount the environment's `config.json` at `/usr/share/nginx/html/config.json`. The gateway in front routes `/api/**` and the login/logout endpoints to the backend.
+
+### Shareable demo (GitHub Pages)
+
+`.github/workflows/demo-pages.yml` publishes the mock-mode build to `https://<owner>.github.io/<repo>/` on every push to `main`. There is no backend: the fake API runs in each visitor's browser and keeps its fabricated data in that browser only, so colleagues don't see each other's changes. "Reset mock data" on the mock sign-in page starts over.
+
+One-time setup: repository **Settings → Pages → Source: GitHub Actions**. Pages on a private repository needs a paid GitHub plan, and a site published from a public repository is visible to anyone with the link.
+
+App-internal URLs (config, translations, mock sign-in) are relative to `<base href>` so the app works under a sub-path. Pages has no SPA rewrites, so the workflow copies `index.html` to `404.html` for deep links.
 
 ## Status
 

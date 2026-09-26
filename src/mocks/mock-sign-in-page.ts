@@ -61,6 +61,6 @@ export class MockSignInPage {
   protected signIn(key: string): void {
     localStorage.setItem(PERSONA_STORAGE_KEY, key);
     // Full reload, like the real gateway redirect back to the app.
-    window.location.assign('/');
+    window.location.assign(document.baseURI);
   }
 }

@@ -18,7 +18,8 @@ const MOCK_LOGOUT_PATH = '/mock/sign-out';
 
 const mockConfig: AppConfig = {
   apiBasePath: '/api',
-  loginPath: MOCK_LOGIN_PATH,
+  // Relative, so navigation stays under <base href> when the demo runs under a sub-path.
+  loginPath: MOCK_LOGIN_PATH.slice(1),
   logoutPath: MOCK_LOGOUT_PATH,
   defaultLocale: 'en',
   supportedLocales: ['en', 'ar'],
@@ -26,16 +27,16 @@ const mockConfig: AppConfig = {
 };
 
 export const handlers = [
-  http.get('/config.json', () => HttpResponse.json(mockConfig)),
+  http.get('*/config.json', () => HttpResponse.json(mockConfig)),
 
   http.get('/api/v1/me', () => {
     const me = currentPersona();
     return me ? HttpResponse.json(me) : problem(401, 'UNAUTHENTICATED');
   }),
 
-  http.post(MOCK_LOGOUT_PATH, () => {
+  http.post(`*${MOCK_LOGOUT_PATH}`, () => {
     localStorage.removeItem(PERSONA_STORAGE_KEY);
-    return new HttpResponse(null, { status: 204, headers: { Location: '/login' } });
+    return new HttpResponse(null, { status: 204, headers: { Location: 'login' } });
   }),
 
   ...organizationHandlers,

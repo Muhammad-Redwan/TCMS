@@ -5,7 +5,8 @@ import { handlers, MOCK_LOGIN_PATH } from './handlers';
 /** Mock configuration only (see angular.json fileReplacements). */
 export async function enableMocks(): Promise<void> {
   await setupWorker(...handlers).start({
-    serviceWorker: { url: '/mockServiceWorker.js' },
+    // Absolute URL under <base href>: the demo build is served from a sub-path.
+    serviceWorker: { url: new URL('mockServiceWorker.js', document.baseURI).href },
     onUnhandledRequest: 'bypass',
     quiet: true,
   });

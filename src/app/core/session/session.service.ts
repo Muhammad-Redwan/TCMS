@@ -79,7 +79,7 @@ export class SessionService {
   }
 
   async logout(): Promise<void> {
-    let destination = '/login';
+    let destination = 'login';
     try {
       // Contract OPEN: the gateway is expected to answer 2xx with a Location header
       // (e.g. the Keycloak end-session URL) instead of a 302, which XHR cannot follow cross-origin.

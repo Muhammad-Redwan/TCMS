@@ -60,8 +60,8 @@ describe('apiInterceptor', () => {
   });
 
   it('leaves non-API requests untouched', () => {
-    http.get('/i18n/en.json').subscribe();
-    const request = backend.expectOne('/i18n/en.json');
+    http.get('i18n/en.json').subscribe();
+    const request = backend.expectOne('i18n/en.json');
     expect(request.request.headers.has('X-Requested-With')).toBe(false);
     request.flush({});
   });

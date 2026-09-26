@@ -13,7 +13,7 @@ export type StatusKind = 'forbidden' | 'notFound' | 'error';
       <h1>{{ 'status.' + kind() + '.title' | transloco }}</h1>
       <p>{{ 'status.' + kind() + '.body' | transloco }}</p>
       @if (kind() === 'error') {
-        <a href="/">{{ 'status.retry' | transloco }}</a>
+        <a href="./">{{ 'status.retry' | transloco }}</a>
       } @else {
         <a routerLink="/">{{ 'status.goHome' | transloco }}</a>
       }

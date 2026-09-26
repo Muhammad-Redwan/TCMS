@@ -3,7 +3,8 @@ import { InjectionToken } from '@angular/core';
 export type Locale = 'ar' | 'en';
 
 /**
- * Runtime settings loaded from /config.json at startup (D17).
+ * Runtime settings loaded from config.json at startup (D17). The path is relative so it resolves
+ * against <base href>, which lets the same build run under a sub-path (the GitHub Pages demo).
  * One build is promoted through environments; each environment serves its own config.json.
  * Never put secrets, tokens or internal service URLs here: this file is public.
  */
@@ -31,7 +32,7 @@ const REQUIRED_KEYS: (keyof AppConfig)[] = [
 ];
 
 export async function loadAppConfig(fetchFn: typeof fetch = fetch): Promise<AppConfig> {
-  const response = await fetchFn('/config.json', { cache: 'no-store' });
+  const response = await fetchFn('config.json', { cache: 'no-store' });
   if (!response.ok) {
     throw new Error(`Cannot load /config.json (HTTP ${response.status})`);
   }
